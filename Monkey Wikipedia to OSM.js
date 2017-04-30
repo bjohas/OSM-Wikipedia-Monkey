@@ -12,6 +12,13 @@
 (function() {
     'use strict';
     // Fetch page title
+    var attachhere = document.getElementById('siteNotice');
+    var attachdiv = document.createElement("div");
+    attachdiv.setAttribute('style', 'border: solid 1px blue; padding: 5px;');
+    attachdiv.appendChild(document.createTextNode("Wikipedia->OSM Link: "));
+    attachdiv.id = "attachdiv";
+    attachhere.appendChild(attachdiv);
+    attachdiv = document.getElementById('attachdiv');
     var title = document.getElementById('firstHeading').innerHTML;
     var wp = title;
     title = encodeURI(title);
@@ -19,14 +26,19 @@
     lang = lang.replace(/\..*/,"").replace(/.*\//,"");
     var coordspan = document.getElementById('coordinates');
     wp = lang+":"+wp;
+    // Search by title
+    link = "https://osm.wikidata.link/search?q="+title;
+    attachdiv.appendChild(ahref("mylinkOSMWIKIDATA"," (osm.wikidata.link)","Search on osm.wikidata.link",link));
+    link = "http://overpass-turbo.eu/map.html?Q="+overpassquery + outskel;
+    // Obtain wikidata
     var wd;
     try {
         // Fetch wikidata
         wd = document.getElementById('t-wikibase').getElementsByTagName("a")[0].href;
         wd = wd.replace(/.*\//,"");
-        coordspan.appendChild(document.createTextNode("; "+wd));
+        attachdiv.appendChild(document.createTextNode("; "+wd));
     } catch(err) {
-        coordspan.appendChild(document.createTextNode("; no wikidata!"));
+        attachdiv.appendChild(document.createTextNode("; no wikidata!"));
     }
     // Wikidata object only
     // overpassquery = "%5Bout%3Ajson%5D%5Btimeout%3A25%5D%3B%0A%28%0A%20%20node%5B%22wikidata%22%3D%22"+wd+"%22%5D%3B%0A%20%20way%5B%22wikidata%22%3D%22"+wd+"%22%5D%3B%0A%20%20relation%5B%22wikidata%22%3D%22"+wd+"%22%5D%3B%0A%29%3B%0Aout%20meta%3B%0A";
@@ -71,29 +83,26 @@ out skel qt;
         }
         coord3 = encodeURI(lk.replace(/.*params=/,"").replace(/\&.*/,""));
     } catch(err) {
-        coordspan.appendChild(document.createTextNode(" (coords!)"));
+        attachdiv.appendChild(document.createTextNode(" (coords!)"));
     }
     try {
         // Create links
         OSMExtension = "?zoom=18&mlat="+coord[0]+"&mlon="+coord[1]+"&lang="+lang+"&wikidata="+wd+"&wikipedia="+lang+":"+title;
         link = "http://www.openstreetmap.org/"+OSMExtension;
-        coordspan.appendChild(ahref("mylinkidOSM"," (OSM)","View area in OSM",link));
+        attachdiv.appendChild(ahref("mylinkidOSM"," (OSM)","View area in OSM",link));
         // link = "http://www.openstreetmap.org/#map=17/"+coord[0]+"/"+coord[1];
         // link = "http://www.openstreetmap.org/edit#map=17/"+coord[0]+"/"+coord[1];
         link = "http://www.openstreetmap.org/edit?zoom=18&mlat="+coord[0]+"&mlon="+coord[1]+"&lang="+lang+"&wikidata="+wd+"&wikipedia="+lang+":"+title;
-        coordspan.appendChild(ahref("mylinkidID"," (iD)","Edit area wth iD",link));
+        attachdiv.appendChild(ahref("mylinkidID"," (iD)","Edit area wth iD",link));
         link = "http://127.0.0.1:8111/add_node?lat="+coord[0]+"&lon="+coord[1]+"&addtags="+"name="+title+encodeURI("|source=wikipedia|wikidata="+wd+"|wikipedia=")+lang+":"+title;
-        coordspan.appendChild(ahref("mylinkidJOSM"," (JOSM)","Add node with JOSM",link));
-        link = "https://osm.wikidata.link/search?q="+title;
-        coordspan.appendChild(ahref("mylinkid"," (osm.wd.link)","Search on osm.wikidata.link",link));
-        link = "http://overpass-turbo.eu/map.html?Q="+overpassquery + outskel;
-        coordspan.appendChild(ahref("mylinkidMAP"," (overpass-map)","View overpass interactive map for wikidata:"+wd,link));
+        attachdiv.appendChild(ahref("mylinkidJOSM"," (JOSM)","Add node with JOSM",link));
+        attachdiv.appendChild(ahref("mylinkidMAP"," (overpass-map)","View overpass interactive map for wikidata:"+wd,link));
         link = "http://overpass-api.de/api/interpreter?data="+overpassquery;
-        coordspan.appendChild(ahref("mylinkidJSON"," (overpass-json)","View overpass json data for wikidata:"+wd,link));
+        attachdiv.appendChild(ahref("mylinkidJSON"," (overpass-json)","View overpass json data for wikidata:"+wd,link));
         link = "http://localhost:50808/hello?title="+lang+":"+title+"&coord="+coord2+"&geohack="+coord3+"&wikidata="+wd;
-        coordspan.appendChild(ahref("mylinkid"," (local)","You need a local server for this.",link));
+        attachdiv.appendChild(ahref("mylinkid"," (local)","You need a local server for this.",link));
     } catch(err) {
-        coordspan.appendChild(document.createTextNode(" (links!)"));
+        attachdiv.appendChild(document.createTextNode(" (links!)"));
     }
     try {
         link = "http://overpass-api.de/api/interpreter?data="+overpassquery;
@@ -119,9 +128,9 @@ out skel qt;
                         // At least for the first link, rather than appending, we could replace the earlier link.
                         if (j===0) {
                             document.getElementById('mylinkidOSM').href = link + OSMExtension;
-                            coordspan.appendChild(document.createTextNode(haswp+haswd));
+                            attachdiv.appendChild(document.createTextNode(" "+haswp+haswd));
                         } else {
-                            coordspan.appendChild(ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+j+" on OSM",link));
+                            attachdiv.appendChild(ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+j+" on OSM",link));
                         }
                         var factor = 0.005;
                         var left = parseFloat(coord[1]) - factor;
@@ -133,11 +142,11 @@ out skel qt;
                         if (j===0) {
                             document.getElementById('mylinkidJOSM').href = link ;
                         } else {
-                            coordspan.appendChild(ahref("mylinkidJOSMx"," (JOSM) ","Edit object "+j+" with JOSM",link));
+                            attachdiv.appendChild(ahref("mylinkidJOSMx"," (JOSM) ","Edit object "+j+" with JOSM",link));
                         }
                     }
                     if (op.elements.length === 0) {
-                        coordspan.appendChild(document.createTextNode("; No OSM object!"));
+                        attachdiv.appendChild(document.createTextNode("; No OSM object!"));
                         // Remove the above elements, as they won't work:
                         //document.getElementById("mylinkidJSON").outerHTML = "";
                         //document.getElementById("mylinkidMAP").outerHTML = "";
