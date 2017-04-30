@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Extracting coordinates and wikidata from wikipedia page
+// @name         Monkey Wikipedia to OSM.js
 // @namespace    http://bjohas.de
 // @version      0.1
 // @description  Extract coordinates and wikidata from wikipedia page. Probably won't work on all wikipedias
@@ -28,6 +28,10 @@
     } catch(err) {
         coordspan.appendChild(document.createTextNode("; no wikidata!"));
     }
+    // Wikidata object only
+    // overpassquery = "%5Bout%3Ajson%5D%5Btimeout%3A25%5D%3B%0A%28%0A%20%20node%5B%22wikidata%22%3D%22"+wd+"%22%5D%3B%0A%20%20way%5B%22wikidata%22%3D%22"+wd+"%22%5D%3B%0A%20%20relation%5B%22wikidata%22%3D%22"+wd+"%22%5D%3B%0A%29%3B%0Aout%20meta%3B%0A";
+    // Wikidata or Wikipedia tags:
+    // var overpassquery = "%5Bout%3Ajson%5D%5Btimeout%3A25%5D%3B%0A%28%0A%20%20node%5B%22wikipedia%22%3D%22"+wp+"%22%5D%3B%0A%20%20way%5B%22wikipedia%22%3D%22"+wp+"%22%5D%3B%0A%20%20relation%5B%22wikipedia%22%3D%22"+wp+"%22%5D%3B%0A%20%20node%5B%22wikidata%22%3D%22"+wd+"%22%5D%3B%0A%20%20way%5B%22wikidata%22%3D%22"+wd+"%22%5D%3B%0A%20%20relation%5B%22wikidata%22%3D%22"+wd+"%22%5D%3B%0A%29%3B%0Aout%20meta%3B";
     var overpassquery = encodeURIComponent(`
 [out:json][timeout:25];
 (
@@ -48,6 +52,7 @@ out skel qt;
     var coord2;
     var coord3;
     var link;
+    var OSMExtension = "";
     try {
         // Fetch coordinates
         var span = document.getElementsByClassName("geo-default")[0];
@@ -70,14 +75,15 @@ out skel qt;
     }
     try {
         // Create links
-        link = "http://www.openstreetmap.org/?zoom=18&mlat="+coord[0]+"&mlon="+coord[1];
-        coordspan.appendChild(ahref("mylinkid"," (OSM)","View area in OSM",link));
+        OSMExtension = "?zoom=18&mlat="+coord[0]+"&mlon="+coord[1]+"&lang="+lang+"&wikidata="+wd+"&wikipedia="+lang+":"+title;
+        link = "http://www.openstreetmap.org/"+OSMExtension;
+        coordspan.appendChild(ahref("mylinkidOSM"," (OSM)","View area in OSM",link));
         // link = "http://www.openstreetmap.org/#map=17/"+coord[0]+"/"+coord[1];
         // link = "http://www.openstreetmap.org/edit#map=17/"+coord[0]+"/"+coord[1];
-        link = "http://www.openstreetmap.org/edit?zoom=18&mlat="+coord[0]+"&mlon="+coord[1]+"?"+"wikidata="+wd+"&wikipedia="+lang+":"+title;
-        coordspan.appendChild(ahref("mylinkid"," (iD)","Edit area wth iD",link));
-        link = "http://127.0.0.1:8111/add_node?lat="+coord[0]+"&lon="+coord[1]+"&addtags="+"name="+title+encodeURI("|wikidata="+wd+"|wikipedia=")+lang+":"+title;
-        coordspan.appendChild(ahref("mylinkid"," (JOSM)","Add node with JOSM",link));
+        link = "http://www.openstreetmap.org/edit?zoom=18&mlat="+coord[0]+"&mlon="+coord[1]+"&lang="+lang+"&wikidata="+wd+"&wikipedia="+lang+":"+title;
+        coordspan.appendChild(ahref("mylinkidID"," (iD)","Edit area wth iD",link));
+        link = "http://127.0.0.1:8111/add_node?lat="+coord[0]+"&lon="+coord[1]+"&addtags="+"name="+title+encodeURI("|source=wikipedia|wikidata="+wd+"|wikipedia=")+lang+":"+title;
+        coordspan.appendChild(ahref("mylinkidJOSM"," (JOSM)","Add node with JOSM",link));
         link = "https://osm.wikidata.link/search?q="+title;
         coordspan.appendChild(ahref("mylinkid"," (osm.wd.link)","Search on osm.wikidata.link",link));
         link = "http://overpass-turbo.eu/map.html?Q="+overpassquery + outskel;
@@ -110,7 +116,13 @@ out skel qt;
                             haswd = "WD";
                         }
                         link = "http://www.openstreetmap.org/"+type+"/"+id;
-                        coordspan.appendChild(ahref("mylinkid"," "+haswp+haswd+","+type+"/"+id,"View object "+j+" on OSM",link));
+                        // At least for the first link, rather than appending, we could replace the earlier link.
+                        if (j===0) {
+                            document.getElementById('mylinkidOSM').href = link + OSMExtension;
+                            coordspan.appendChild(document.createTextNode(haswp+haswd));
+                        } else {
+                            coordspan.appendChild(ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+j+" on OSM",link));
+                        }
                         var factor = 0.005;
                         var left = parseFloat(coord[1]) - factor;
                         var right = parseFloat(coord[1]) + factor;
@@ -118,16 +130,25 @@ out skel qt;
                         var top = parseFloat(coord[0]) + factor;
                         var pos = "right="+right+"&left="+left+"&top="+top+"&bottom="+bottom;
                         link = "http://127.0.0.1:8111/load_and_zoom?"+pos+"&new_layer=false&select="+type+id;
-                        coordspan.appendChild(ahref("mylinkid"," (JOSM) ","Edit object "+j+" with JOSM",link));
+                        if (j===0) {
+                            document.getElementById('mylinkidJOSM').href = link ;
+                        } else {
+                            coordspan.appendChild(ahref("mylinkidJOSMx"," (JOSM) ","Edit object "+j+" with JOSM",link));
+                        }
                     }
                     if (op.elements.length === 0) {
                         coordspan.appendChild(document.createTextNode("; No OSM object!"));
                         // Remove the above elements, as they won't work:
-                        document.getElementById("mylinkidJSON").outerHTML = "";
-                        document.getElementById("mylinkidMAP").outerHTML = "";
+                        //document.getElementById("mylinkidJSON").outerHTML = "";
+                        //document.getElementById("mylinkidMAP").outerHTML = "";
+                        document.getElementById("mylinkidJSON").outerHTML = " (overpass-JSON)";
+                        document.getElementById("mylinkidMAP").outerHTML = " (overpass-map)";
+                        // Better strategy would be to just remove the links, so the line doesn't shift about.
+                        //document.getElementById('mylinkidJSON').href = link ;
+                        //document.getElementById('mylinkidMAP').href = link ;
                     }
                 } catch(err) {
-                    alert("error: "+err);
+                    alert("error xmlhttp: "+err);
                 }
             }
         });
