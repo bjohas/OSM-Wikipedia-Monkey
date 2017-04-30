@@ -6,6 +6,6 @@ The Wikipedia->OSM script works reasonably well.
 
 The OSM->Wikipedia script doesn't.
 
-See http://bjohas.de/Maps/Linking_wikipedia_to_OSM for background.
+See http://bjohas.de/wiki/Maps/Linking_wikipedia_to_OSM for background.
 
 Do contribute :)
