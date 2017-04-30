@@ -14,13 +14,18 @@
 
 (function() {
     'use strict';
+    var searchradius = 10000;
+    var zoom = 0;
+    var loc=window.location.href;
+    var found = loc.match(/\/edit/);
+    if (found) {
+    }
     var lang = "de";
     var sidebar = document.getElementById('sidebar');
     sidebar.appendChild(document.createTextNode("Initialised. "));
     var lat = 0;
     var lon = 0;
-    var loc=window.location.href;
-    var found = loc.match(/lang\=(\w\w)/);
+    found = loc.match(/lang\=(\w\w)/);
     if (found) {
         lang = found[1];
         sidebar.appendChild(document.createTextNode("Lang: "+lang+"; "));
@@ -29,6 +34,7 @@
     if (found) {
         // alert("found");
         sidebar.appendChild(document.createTextNode("Coord from url: "+found[2]+","+ found[3] + "; "));
+        zoom = found[1];
         lat = found[2];
         lon = found[3];
     } else {
@@ -47,9 +53,18 @@
             }
         }
     }
-    var link = apiurl(lang,lat,lon,500);
+    if (zoom>=13) {
+        searchradius = 5000;
+    }
+    if (zoom>=15) {
+        searchradius = 1000;
+    }
+    if (zoom>18) {
+        searchradius = 100;
+    }
+    var link = apiurl(lang,lat,lon,searchradius);
     sidebar.appendChild(document.createTextNode("Note: "+lat+","+ lon + "; "));
-    sidebar.appendChild(ahref("wikipediaapi","API Query","title",link));
+    sidebar.appendChild(ahref("wikipediaapi","API Query (r="+searchradius+", lang="+lang+")","title",link));
 //    alert(lat+" "+ lon);
     try {
         GM_xmlhttpRequest({
@@ -66,7 +81,7 @@
                             sidebar.appendChild(makediv(lang,page[prop]));
                         }
                     } else {
-                        sidebar.appendChild(document.createTextNode(" No results."));
+                        sidebar.appendChild(document.createTextNode(" No results within search radius of "+searchradius+" m in language "+lang+". "));
 
                     }
 /*
@@ -126,22 +141,33 @@ function ahref(id,text, title, href) {
 
 function makediv(lang,obj) {
     var div = document.createElement("div");
+    // div.setAttribute('style', 'padding: 5px;');
     //var title = document.createTextNode(obj.title+obj.pageprops.wikibase_item);
     var div2 = document.createElement("div");
+    div2.setAttribute('style', 'border-top: solid 1px blue; padding: 5px;');
+    if (obj.thumbnail) {
+        var img = document.createElement('img');
+        img.src = obj.thumbnail.source;
+        div2.appendChild(img);
+    }
     //div2.appendChild(title);
     div2.appendChild(ahref("id1",obj.title,obj.title,"http://"+lang+".wikipedia.org/wiki/"+obj.title));
     div2.appendChild(document.createTextNode(", "));
     div2.appendChild(ahref("id2",obj.pageprops.wikibase_item,obj.pageprops.wikibase_item,"http://www.wikidata.org/wiki/"+obj.pageprops.wikibase_item));
     div2.appendChild(document.createTextNode(", "));
     var url=window.location.href;
-    url = url.replace(/\?.*/,"");
-    div2.appendChild(ahref("id2","show","show",url+"?mlat="+obj.coordinates[0].lat+"&mlon="+obj.coordinates[0].lon));
-    div.appendChild(div2);
-    if (obj.thumbnail) {
-        var img = document.createElement('img');
-        img.src = obj.thumbnail.source;
-        div.appendChild(img);
+    var mapbit =  url.match(/(\#.*)/);
+    if (mapbit) {
+        mapbit = mapbit[1];
+    } else {
+        mapbit = "";
     }
+    url = url.replace(/\?.*/,"");
+    url = url.replace(/\#.*/,"");
+    var link = url+"?mlat="+obj.coordinates[0].lat+"&mlon="+obj.coordinates[0].lon+mapbit;
+    div2.appendChild(ahref("id2","show","show",link));
+    div.appendChild(div2);
+
 //    obj.terms.description
 /*    +obj.pageid
         +obj.title
