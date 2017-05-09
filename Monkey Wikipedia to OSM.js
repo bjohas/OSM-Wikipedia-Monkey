@@ -96,6 +96,7 @@ out skel qt;
         attachdiv.appendChild(ahref("mylinkidID"," (iD)","Edit area wth iD",link));
         link = "http://127.0.0.1:8111/add_node?lat="+coord[0]+"&lon="+coord[1]+"&addtags="+"name="+title+encodeURI("|source=wikipedia|wikidata="+wd+"|wikipedia=")+lang+":"+title;
         attachdiv.appendChild(ahref("mylinkidJOSM"," (JOSM)","Add node with JOSM",link));
+        link = "http://overpass-turbo.eu/map.html?Q="+overpassquery+outskel;
         attachdiv.appendChild(ahref("mylinkidMAP"," (overpass-map)","View overpass interactive map for wikidata:"+wd,link));
         link = "http://overpass-api.de/api/interpreter?data="+overpassquery;
         attachdiv.appendChild(ahref("mylinkidJSON"," (overpass-json)","View overpass json data for wikidata:"+wd,link));
