@@ -8,6 +8,8 @@ The OSM->Wikipedia script doesn't. The main issue is that you need to reload the
 
 See http://bjohas.de/wiki/Maps/Linking_wikipedia_to_OSM for background and related projects.
 
+Wikipedia Gadget version also here https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget.
+
 Do contribute :)
 
 
