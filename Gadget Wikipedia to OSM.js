@@ -107,6 +107,7 @@ window.wposm = (function () {
 		attachdiv.appendChild(am.ahref("mylinkidJSON"," (overpass-json)","View overpass json data for wikidata:"+wd,link));
 		// link = "http://localhost:50808/hello?title="+lang+":"+title+"&coord="+coord2+"&geohack="+coord3+"&wikidata="+wd;
 		// attachdiv.appendChild(am.ahref("mylinkid"," (local)","You need a local server for this.",link));
+		attachdiv.appendChild(am.ahref("reportIssue"," (HELP)","Report an issue and make suggestions for this Gadget.","https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget"));
 	    } catch(err) {
 		attachdiv.appendChild(document.createTextNode(" (links!)"));
 	    }
@@ -201,4 +202,3 @@ window.wposm = (function () {
  * Initializes the script on page load
  */
 $(wposm.init);
-
