@@ -52,12 +52,12 @@ window.wposm = (function () {
 	    // Obtain wikidata
 	    var wd;
 	    try {
-		// Fetch wikidata
-		wd = document.getElementById('t-wikibase').getElementsByTagName("a")[0].href;
-		wd = wd.replace(/.*\//,"");
-		attachdiv.appendChild(document.createTextNode("; "+wd));
+			// Fetch wikidata
+			wd = document.getElementById('t-wikibase').getElementsByTagName("a")[0].href;
+			wd = wd.replace(/.*\//,"");
+			attachdiv.appendChild(document.createTextNode("; "+wd));
 	    } catch(err) {
-		attachdiv.appendChild(document.createTextNode("; no wikidata!"));
+			attachdiv.appendChild(document.createTextNode("; no wikidata!"));
 	    }
 	    var overpassquery = encodeURIComponent(
 						      "[out:json][timeout:25];"+
@@ -71,45 +71,45 @@ window.wposm = (function () {
 	    var link;
 	    var OSMExtension = "";
 	    try {
-		// Fetch coordinates
-		var span = document.getElementsByClassName("geo-default")[0];
-		coord2 = document.getElementsByClassName("geo")[0].innerHTML;
-		coord2 = coord2.replace(/<\/span>/,",").replace(/<.*?>/g,"").replace(/ /g,"").replace(/\;/g,",");
-		coord2 = coord2.replace(/,+/,",");
-		coord = coord2.split(",");
-		// Also coordinates from link to geohack tools.wmflabs.org/geohack/geohack.php?....params=40.4865_N_8.7698_E_.....
-		var lks = coordspan.getElementsByTagName("a");
-		var lk = "";
-		for (var j = 0; j < lks.length; j++){
-		    if (lks[j].href.match(/geohack/g) === null) {
-		    } else {
-			lk = lks[j].href;
-		    }
-		}
-		coord3 = encodeURI(lk.replace(/.*params=/,"").replace(/\&.*/,""));
+			// Fetch coordinates
+			var span = document.getElementsByClassName("geo-default")[0];
+			coord2 = document.getElementsByClassName("geo")[0].innerHTML;
+			coord2 = coord2.replace(/<\/span>/,",").replace(/<.*?>/g,"").replace(/ /g,"").replace(/\;/g,",");
+			coord2 = coord2.replace(/,+/,",");
+			coord = coord2.split(",");
+			// Also coordinates from link to geohack tools.wmflabs.org/geohack/geohack.php?....params=40.4865_N_8.7698_E_.....
+			var lks = coordspan.getElementsByTagName("a");
+			var lk = "";
+			for (var j = 0; j < lks.length; j++){
+			    if (lks[j].href.match(/geohack/g) === null) {
+			    } else {
+					lk = lks[j].href;
+			    }
+			}
+			coord3 = encodeURI(lk.replace(/.*params=/,"").replace(/\&.*/,""));
 	    } catch(err) {
-		attachdiv.appendChild(document.createTextNode(" (coords!)"));
+			attachdiv.appendChild(document.createTextNode(" (coords!)"));
 	    }
 	    try {
-		// Create links
-		OSMExtension = "?zoom=18&mlat="+coord[0]+"&mlon="+coord[1];
-		link = "http://www.openstreetmap.org/"+OSMExtension;
-		attachdiv.appendChild(am.ahref("mylinkidOSM"," (OSM)","View area in OSM",link));
-		// link = "http://www.openstreetmap.org/#map=17/"+coord[0]+"/"+coord[1];
-		// link = "http://www.openstreetmap.org/edit#map=17/"+coord[0]+"/"+coord[1];
-		link = "http://www.openstreetmap.org/edit?zoom=18&mlat="+coord[0]+"&mlon="+coord[1]+"&lang="+lang+"&wikidata="+wd+"&wikipedia="+lang+":"+title;
-		attachdiv.appendChild(am.ahref("mylinkidID"," (iD)","Edit area wth iD",link));
-		link = "http://127.0.0.1:8111/add_node?lat="+coord[0]+"&lon="+coord[1]+"&addtags="+"name="+title+encodeURI("|source=wikipedia|wikidata="+wd+"|wikipedia=")+lang+":"+title;
-		attachdiv.appendChild(am.ahref("mylinkidJOSM"," (JOSM)","Add node with JOSM",link));
-		link = "http://overpass-turbo.eu/map.html?Q="+overpassquery+outskel;
-		attachdiv.appendChild(am.ahref("mylinkidMAP"," (overpass-map)","View overpass interactive map for wikidata:"+wd,link));
-		link = "http://overpass-api.de/api/interpreter?data="+overpassquery;
-		attachdiv.appendChild(am.ahref("mylinkidJSON"," (overpass-json)","View overpass json data for wikidata:"+wd,link));
-		// link = "http://localhost:50808/hello?title="+lang+":"+title+"&coord="+coord2+"&geohack="+coord3+"&wikidata="+wd;
-		// attachdiv.appendChild(am.ahref("mylinkid"," (local)","You need a local server for this.",link));
-		attachdiv.appendChild(am.ahref("reportIssue"," (HELP)","Report an issue and make suggestions for this Gadget.","https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget"));
+			// Create links
+			OSMExtension = "?zoom=18&mlat="+coord[0]+"&mlon="+coord[1];
+			link = "http://www.openstreetmap.org/"+OSMExtension;
+			attachdiv.appendChild(am.ahref("mylinkidOSM"," (OSM)","View area in OSM",link));
+			// link = "http://www.openstreetmap.org/#map=17/"+coord[0]+"/"+coord[1];
+			// link = "http://www.openstreetmap.org/edit#map=17/"+coord[0]+"/"+coord[1];
+			link = "http://www.openstreetmap.org/edit?zoom=18&mlat="+coord[0]+"&mlon="+coord[1]+"&lang="+lang+"&wikidata="+wd+"&wikipedia="+lang+":"+title;
+			attachdiv.appendChild(am.ahref("mylinkidID"," (iD)","Edit area wth iD",link));
+			link = "http://127.0.0.1:8111/add_node?lat="+coord[0]+"&lon="+coord[1]+"&addtags="+"name="+title+encodeURI("|source=wikipedia|wikidata="+wd+"|wikipedia=")+lang+":"+title;
+			attachdiv.appendChild(am.ahref("mylinkidJOSM"," (JOSM)","Add node with JOSM",link));
+			link = "http://overpass-turbo.eu/map.html?Q="+overpassquery+outskel;
+			attachdiv.appendChild(am.ahref("mylinkidMAP"," (overpass-map)","View overpass interactive map for wikidata:"+wd,link));
+			link = "http://overpass-api.de/api/interpreter?data="+overpassquery;
+			attachdiv.appendChild(am.ahref("mylinkidJSON"," (overpass-json)","View overpass json data for wikidata:"+wd,link));
+			// link = "http://localhost:50808/hello?title="+lang+":"+title+"&coord="+coord2+"&geohack="+coord3+"&wikidata="+wd;
+			// attachdiv.appendChild(am.ahref("mylinkid"," (local)","You need a local server for this.",link));
+			attachdiv.appendChild(am.ahref("reportIssue"," (HELP)","Report an issue and make suggestions for this Gadget.","https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget"));
 	    } catch(err) {
-		attachdiv.appendChild(document.createTextNode(" (links!)"));
+			attachdiv.appendChild(document.createTextNode(" (links!)"));
 	    }
 	    link = "https://overpass-api.de/api/interpreter?data="+overpassquery;
 	    return {"link": link, "OSMExtension": OSMExtension, "coord":coord};
@@ -126,48 +126,58 @@ window.wposm = (function () {
 			    // alert(response.responseText);
 			    var op = JSON.parse(responseText);
 			    for (var j = 0; j < op.elements.length; j++){
-				var id = op.elements[j].id;
-				var type = op.elements[j].type;
-				var haswp = "";
-				if (op.elements[j].tags.wikipedia) {
-				    haswp = "WP";
-				}
-				var haswd ="";
-				if (op.elements[j].tags.wikidata) {
-				    haswd = "WD";
-				}
-				link = "http://www.openstreetmap.org/"+type+"/"+id;
-				// At least for the first link, rather than appending, we could replace the earlier link.
-				if (j===0) {
-				    document.getElementById('mylinkidOSM').href = link + obj.OSMExtension;
-				    attachdiv.appendChild(document.createTextNode(" "+haswp+haswd));
-				} else {
-				    attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+j+" on OSM",link));
-				}
-				var factor = 0.005;
-				var left = parseFloat(obj.coord[1]) - factor;
-				var right = parseFloat(obj.coord[1]) + factor;
-				var bottom = parseFloat(obj.coord[0]) - factor;
-				var top = parseFloat(obj.coord[0]) + factor;
-				var pos = "right="+right+"&left="+left+"&top="+top+"&bottom="+bottom;
-				link = "http://127.0.0.1:8111/load_and_zoom?"+pos+"&new_layer=false&select="+type+id;
-				if (j===0) {
-				    document.getElementById('mylinkidJOSM').href = link ;
-				} else {
-				    attachdiv.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Edit object "+j+" with JOSM",link));
-				}
+			    	var matchno = j+1;
+			    	attachdiv.appendChild(document.createTextNode(" ["+matchno+"]"));
+					var id = op.elements[j].id;
+					var type = op.elements[j].type;
+					var haswp = "";
+					if (op.elements[j].tags.wikipedia) {
+					    haswp = "WP";
+					}
+					var haswd ="";
+					if (op.elements[j].tags.wikidata) {
+					    haswd = "WD";
+					}
+					link = "http://www.openstreetmap.org/"+type+"/"+id;
+					// At least for the first link, rather than appending, we could replace the earlier link.
+					if (j===0) {
+					    document.getElementById('mylinkidOSM').href = link + obj.OSMExtension;
+					    document.getElementById('mylinkidOSM').innerHTML = " (OSM/"+type+id+")" ;
+					    if (op.elements.length === 1) { 
+					    	attachdiv.appendChild(document.createTextNode(" "+haswp+haswd));
+					    } else {
+						    attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+j+" on OSM",link));
+					    }
+					} else {
+					    attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+j+" on OSM",link));
+					}
+					var factor = 0.005;
+					var left = parseFloat(obj.coord[1]) - factor;
+					var right = parseFloat(obj.coord[1]) + factor;
+					var bottom = parseFloat(obj.coord[0]) - factor;
+					var top = parseFloat(obj.coord[0]) + factor;
+					var pos = "right="+right+"&left="+left+"&top="+top+"&bottom="+bottom;
+					link = "http://127.0.0.1:8111/load_and_zoom?"+pos+"&new_layer=false&select="+type+id;
+					if (j===0) {
+					    document.getElementById('mylinkidJOSM').href = link ;
+					    if (op.elements.length > 1) { 
+					   		attachdiv.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Edit object "+j+" with JOSM",link));
+						}
+					} else {
+					    attachdiv.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Edit object "+j+" with JOSM",link));
+					}
 			    }
 			    if (op.elements.length === 0) {
-				attachdiv.appendChild(document.createTextNode("; No OSM object!"));
-				// Remove the above elements, as they won't work:
-				//document.getElementById("mylinkidJSON").outerHTML = "";
-				//document.getElementById("mylinkidMAP").outerHTML = "";
-				document.getElementById("mylinkidJSON").outerHTML = " (overpass-JSON)";
-				document.getElementById("mylinkidMAP").outerHTML = " (overpass-map)";
-				// Better strategy would be to just remove the links, so the line doesn't shift about.
-				//document.getElementById('mylinkidJSON').href = link ;
-				//document.getElementById('mylinkidMAP').href = link ;
-			    }
+					attachdiv.appendChild(document.createTextNode("; No OSM object!"));
+					// Remove the above elements, as they won't work:
+					//document.getElementById("mylinkidJSON").outerHTML = "";
+					//document.getElementById("mylinkidMAP").outerHTML = "";
+					document.getElementById("mylinkidJSON").outerHTML = " (overpass-JSON)";
+					document.getElementById("mylinkidMAP").outerHTML = " (overpass-map)";
+					// Better strategy would be to just remove the links, so the line doesn't shift about.
+					//document.getElementById('mylinkidJSON').href = link ;
+					//document.getElementById('mylinkidMAP').href = link ;
+			  }
 			} catch(err) {
 			    console.log("error xmlhttp: "+err);
 			}
