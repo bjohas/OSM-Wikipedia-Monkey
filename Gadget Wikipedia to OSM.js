@@ -12,7 +12,7 @@ window.wposm = (function () {
 
     wposmObj.init = function () {
         // console.log("hello");
-        if (!$("#siteSub").length || //incompatible skin
+                if (!$("#siteSub").length || //incompatible skin
             mw.config.get("wgNamespaceNumber") !== 0 || //non-mainspace page
             (mw.config.get("wgAction") !== "view" && mw.config.get("wgAction") !== "purge") || //non-read action
             mw.util.getParamValue("printable") || //printable page
@@ -20,7 +20,7 @@ window.wposm = (function () {
            ) {
             return; //Don't run the script under any of these conditions.
         }
-        ap.addBasicsResult = am.addBasics(); //checks for types visible from article page
+                ap.addBasicsResult = am.addBasics(); //checks for types visible from article page
         if (ap.addBasicsResult) {
             // console.log("getOSMData");
             am.getOSMData(ap.addBasicsResult);
@@ -31,7 +31,7 @@ window.wposm = (function () {
         // Fetch page title
         var attachhere = document.getElementById('siteNotice');
         var attachdiv = document.createElement("div");
-        attachdiv.setAttribute('style', 'border: solid 1px blue; padding: 5px;');
+        attachdiv.setAttribute('style', 'border: solid 1px blue; padding: 5px; text-align: left;');
         attachdiv.appendChild(document.createTextNode("Wikipedia->OSM Link: "));
         attachdiv.id = "attachdiv";
         attachhere.appendChild(attachdiv);
@@ -90,24 +90,30 @@ window.wposm = (function () {
         }
         try {
             // Create links
+// OpenStreetMap.org - area
             OSMExtension = "?zoom=18&mlat="+coord[0]+"&mlon="+coord[1];
             link = "http://www.openstreetmap.org/"+OSMExtension;
             attachdiv.appendChild(am.ahref("mylinkidOSM"," (OSM)","View area in OSM",link));
+// OpenStreetMap.org - iD - edit area
             // link = "http://www.openstreetmap.org/#map=17/"+coord[0]+"/"+coord[1];
             // link = "http://www.openstreetmap.org/edit#map=17/"+coord[0]+"/"+coord[1];
-            link = "http://www.openstreetmap.org/edit?zoom=18&mlat="+coord[0]+"&mlon="+coord[1]+"&lang="+lang+"&wikidata="+wd+"&wikipedia="+lang+":"+title;
-            attachdiv.appendChild(am.ahref("mylinkidID"," (iD)","Edit area wth iD",link));
+            link = "http://www.openstreetmap.org/edit?zoom=18&mlat="+coord[0]+"&mlon="+coord[1]; // +"&lang="+lang+"&wikidata="+wd+"&wikipedia="+lang+":"+title;
+            attachdiv.appendChild(am.ahref("mylinkidID"," (iD)","Edit area with iD",link));
+// JOSM - add node
             link = "http://127.0.0.1:8111/add_node?lat="+coord[0]+"&lon="+coord[1]+"&addtags="+"name="+title+encodeURI("|source=wikipedia|wikidata="+wd+"|wikipedia=")+lang+":"+title;
             attachdiv.appendChild(am.ahref("mylinkidJOSM"," (JOSM)","Add node with JOSM",link));
+// Overpass-turbo - map
             link = "http://overpass-turbo.eu/map.html?Q="+overpassquery+outskel;
             attachdiv.appendChild(am.ahref("mylinkidMAP"," (overpass-map)","View overpass interactive map for wikidata:"+wd,link));
+// Overpass-api - data
             link = "http://overpass-api.de/api/interpreter?data="+overpassquery;
             attachdiv.appendChild(am.ahref("mylinkidJSON"," (overpass-json)","View overpass json data for wikidata:"+wd,link));
             // link = "http://localhost:50808/hello?title="+lang+":"+title+"&coord="+coord2+"&geohack="+coord3+"&wikidata="+wd;
             // attachdiv.appendChild(am.ahref("mylinkid"," (local)","You need a local server for this.",link));
+// Help link
             attachdiv.appendChild(am.ahref("reportIssue"," (HELP)","Report an issue and make suggestions for this Gadget.","https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget"));
         } catch(err) {
-            attachdiv.appendChild(document.createTextNode(" (links!)"));
+            attachdiv.appendChild(document.createTextNode(" (error: No links!)"));
         }
         link = "https://overpass-api.de/api/interpreter?data="+overpassquery;
         return {"link": link, "OSMExtension": OSMExtension, "coord":coord};
@@ -137,17 +143,23 @@ window.wposm = (function () {
                             haswd = "WD";
                         }
                         link = "http://www.openstreetmap.org/"+type+"/"+id;
+                        var linkID = "http://www.openstreetmap.org/edit?"+type+"="+id;
                         // At least for the first link, rather than appending, we could replace the earlier link.
                         if (j===0) {
                             document.getElementById('mylinkidOSM').href = link + obj.OSMExtension;
-                            document.getElementById('mylinkidOSM').innerHTML = " (OSM/"+type+id+")" ;
+                            // document.getElementById('mylinkidOSM').text = " (OSM/"+type+id+")";
+                            document.getElementById('mylinkidOSM').text = " (OSM+)";
+                            document.getElementById('mylinkidOSM').title = "View object on OSM.org.";
+                            document.getElementById('mylinkidID').href = linkID;
+                            document.getElementById('mylinkidID').text = " (iD+)";
+                            document.getElementById('mylinkidID').title = "Edit object with iD.";
                             if (op.elements.length === 1) {
                                 attachdiv.appendChild(document.createTextNode(" "+haswp+haswd));
                             } else {
-                                attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+j+" on OSM",link));
+                                attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+matchno+" on OSM",link));
                             }
                         } else {
-                            attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+j+" on OSM",link));
+                            attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+matchno+" on OSM",link));
                         }
                         var factor = 0.005;
                         var left = parseFloat(obj.coord[1]) - factor;
@@ -155,14 +167,18 @@ window.wposm = (function () {
                         var bottom = parseFloat(obj.coord[0]) - factor;
                         var top = parseFloat(obj.coord[0]) + factor;
                         var pos = "right="+right+"&left="+left+"&top="+top+"&bottom="+bottom;
-                        link = "http://127.0.0.1:8111/load_and_zoom?"+pos+"&new_layer=false&select="+type+id;
+                        // load_and_zoom - would also load area:
+                        // link = "http://127.0.0.1:8111/load_and_zoom?"+pos+"&new_layer=false&select="+type+id;
+                        var link = "http://127.0.0.1:8111/load_object?objects="+type+id+"&new_layer=false";
                         if (j===0) {
                             document.getElementById('mylinkidJOSM').href = link ;
+                            document.getElementById('mylinkidJOSM').text = " (JOSM+)" ;
+                            document.getElementById('mylinkidJOSM').title = "Load object with JSON." ;
                             if (op.elements.length > 1) {
-                                attachdiv.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Edit object "+j+" with JOSM",link));
+                                attachdiv.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object "+j+" with JOSM (same layer)",link));
                             }
                         } else {
-                            attachdiv.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Edit object "+j+" with JOSM",link));
+                            attachdiv.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object "+j+" with JOSM (same layer)",link));
                         }
                     }
                     if (op.elements.length === 0) {
