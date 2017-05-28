@@ -50,7 +50,7 @@ window.wposm = (function () {
         // Search by title
         // link = "https://osm.wikidata.link/search?q="+title;
         // attachdiv.appendChild(am.ahref("mylinkOSMWIKIDATA"," (osm.wikidata.link)","Search on osm.wikidata.link",link));
-        link = "http://overpass-turbo.eu/map.html?Q="+overpassquery + outskel;
+        // link = "http://overpass-turbo.eu/map.html?Q="+overpassquery + outskel ;
         // Obtain wikidata
         var wd;
         try {
@@ -64,14 +64,14 @@ window.wposm = (function () {
         var overpassquery = encodeURIComponent(
             "[out:json][timeout:25];"+
             '(node["wikipedia"="'+wp+'"];way["wikipedia"="'+wp+'"];relation["wikipedia"="'+wp+'"];'+
-            'node["wikidata"="'+wd+'"]; way["wikidata"="'+wd+'"]; relation["wikidata"="'+wd+'"];'+ 
+            'node["wikidata"="'+wd+'"]; way["wikidata"="'+wd+'"]; relation["wikidata"="'+wd+'"];'+
             "); out meta; ");
-        var outskel = encodeURIComponent(" >; out skel qt; ");
+        var outskel = encodeURIComponent(" >; out skel qt; "+"{{style: node, way, relation { text: name; } }}");
         var coord = [0,0];
         var coord_ = [0,0];
         var coord2 = "";
         var coord3 = "";
-        var link;
+        var link = "";
         var OSMExtension = "";
         try {
             // Fetch coordinates
@@ -298,7 +298,9 @@ window.wposm = (function () {
         var attachhere = document.getElementById('siteNotice');
         var attachdiv = document.createElement("div");
         attachdiv.setAttribute('style', 'border: solid 1px blue; padding: 5px; text-align: left;');
-        am.addText(attachdiv,"osm.wikipedia.link: ");
+        // am.addText(attachdiv,"osm.wikipedia.link: ");
+        attachdiv.appendChild(am.ahref("osmwplinksite","osm.wikipedia.link","Go to osm.wikidata.link","https://osm.wikipedia.link"));
+        attachdiv.appendChild(am.ahref("osmwplinkAPI"," (query) ","API url: "+apiurl,apiurl));
         attachdiv.id = "attachdiv2";
         attachhere.appendChild(attachdiv);
         // Search by title
@@ -340,27 +342,43 @@ window.wposm = (function () {
                             var existing = 0;
                             var nonexisting = 0;
                             var querystr = "";
+                            var querystrRel = "";
+                            var ol = document.createElement("ol");
+                            var li = "";
                             for (var j = 0; j < op.osm.length; j++){
-                                am.addText(attachdiv,"#"+(j+1)+": ");
-                                querystr = querystr + op.osm[j].type + "(" + op.osm[j].id + ");";
-                                attachdiv.appendChild(am.formatosm(op.osm[j],{"compare":wdhasll,"lat":wdlat,"lon":wdlon}));
-                                am.addText(attachdiv,"; ",1);
+                                if (op.osm[j].type == "relation") {
+                                    querystrRel = querystrRel + op.osm[j].type + "(" + op.osm[j].id + ");\n";
+                                } else {
+                                    querystr = querystr + op.osm[j].type + "(" + op.osm[j].id + ");\n";
+                                }
+                                li = document.createElement("li");
+                                // am.addText(li,"#"+(j+1)+": ");
+                                li.appendChild(am.formatosm(op.osm[j],{"compare":wdhasll,"lat":wdlat,"lon":wdlon,"wikidata":wikidata}));
+                                ol.appendChild(li);
+                                // am.addText(attachdiv,"; ",1);
                                 if (op.osm[j].existing) {
                                     existing++;
                                 } else {
                                     nonexisting++;
                                 }
                             }
+                            attachdiv.appendChild(ol);
                             if (op.osm.length > 0) {
-                                var overpassquery = encodeURIComponent("[out:json][timeout:25];\n ("+querystr+"); out meta; >; out skel qt;");
+                                var overpassquery = encodeURIComponent("[out:json][timeout:25];\n"+
+                                                                       "("+querystr+querystrRel+");\nout meta; >; out skel qt; "+
+                                                                       "("+querystrRel+");\nout bb;\n"+
+                                                                       "{{style: node, way, relation { text: name; }\nrelation {color:blue;} }}");
                                 link = "http://overpass-turbo.eu/map.html?Q="+overpassquery;
                                 attachdiv.appendChild(am.ahref("myresultsMAPall","(overpass-map with all results)","View overpass interactive map for all results,link)",link));
+                                link = "http://overpass-turbo.eu/?Q="+overpassquery;
+                                attachdiv.appendChild(am.ahref("myresultsOPQall","(overpass-turbo query)","View overpass ide for all results,link)",link));
                                 am.addText(attachdiv," If you cannot see all results, it may be that objects over overlapping.",1);
                             }
                             am.addText(attachdiv,"There are "+existing+" OSM objects that are already linked to this wikidata item. There are "+nonexisting+" potential matches.",1);
                             am.addText(attachdiv," RECOMMENDATION: ");
                             if (existing === 0) {
                                 am.addText(attachdiv," Given that there is no connection yet, ");
+                                link = "https://osm.wikidata.link/search?q="+wikidata;
                                 attachdiv.appendChild(am.ahref("mylinkOSMWIKIDATA"," click here to use osm.wikidata.link to make one.","Use osm.wikidata.link to make connection from WD to OSM.",link));
                                 am.addText(attachdiv," Alternatively you can use the iD/JOSM links above. ");
                             } else if (existing === 1) {
@@ -408,10 +426,37 @@ window.wposm = (function () {
         var element = document.createElement('span');
         var type= osm.type;
         var id = osm.id;
-        var text = osm.type+osm.id;
+        var text =  "";
+        var wikidata = "";
+        if (extra) {
+            if (extra.wikidata) {
+                wikidata = extra.wikidata;
+            }
+        }
+        if (osm.tags) {
+            if (osm.tags.name) {
+                text = text + "" + osm.tags.name + "; ";
+                element.innerHTML = "<b>"+text+"</b>";
+                text = "";
+            }
+            if (osm.tags.wikidata) {
+                if (osm.tags.wikidata != wikidata) {
+                    text += " - WIKIDATA TAG MISMATCH! ";
+                } else {
+                    text += " - wikidata match! ";
+                }
+            }
+        }
+        text = text + osm.type+osm.id;
         var textelement = document.createTextNode(text);
         element.appendChild(textelement);
-        var link = "http://www.openstreetmap.org/"+type+"/"+id;
+        var mlatmlon = "";
+        if (extra.compare) {
+            if (extra.compare==1) {
+                mlatmlon = "?mlat="+extra.lat+"&mlon="+extra.lon;
+            }
+         }
+        var link = "http://www.openstreetmap.org/"+type+"/"+id+mlatmlon;
         element.appendChild(am.ahref("mylinkidOSMx"," (OSM)","View object on OSM",link));
         link = "http://www.openstreetmap.org/edit?"+type+"="+id;
         element.appendChild(am.ahref("mylinkidOSMx"," (iD)","Edit object in iD",link));
@@ -444,6 +489,12 @@ window.wposm = (function () {
         }
         textelement = document.createTextNode(text);
         element.appendChild(textelement);
+        element.appendChild(document.createElement('br'));
+        text = JSON.stringify(osm.tags);
+//        text = text.replace("/\"\,\"/g","\", \"");
+        text = text.replace(/","/g,'", "');
+        textelement = document.createTextNode(text);
+        element.appendChild(textelement);
         return element;
     };
 
@@ -462,7 +513,7 @@ window.wposm = (function () {
         a.href = href;
         return a;
     };
-    
+
     am.distance = function(lat, lon, lat2, lon2) {
         var pi = Math.PI;
         var rad = pi/180.0;
