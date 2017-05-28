@@ -22,8 +22,12 @@ window.wposm = (function () {
         }
                 ap.addBasicsResult = am.addBasics(); //checks for types visible from article page
         if (ap.addBasicsResult) {
-            // console.log("getOSMData");
+            console.log("getOSMData");
             am.getOSMData(ap.addBasicsResult);
+            if (ap.addBasicsResult.wikidata) {
+                console.log("osm.wikipedia.link");
+                am.getLinkData(ap.addBasicsResult.wikidata);
+            }
         }
     };
 
@@ -32,7 +36,7 @@ window.wposm = (function () {
         var attachhere = document.getElementById('siteNotice');
         var attachdiv = document.createElement("div");
         attachdiv.setAttribute('style', 'border: solid 1px blue; padding: 5px; text-align: left;');
-        attachdiv.appendChild(document.createTextNode("Wikipedia->OSM Link: "));
+        am.addText(attachdiv,"Wikipedia->OSM: Overpass");
         attachdiv.id = "attachdiv";
         attachhere.appendChild(attachdiv);
         attachdiv = document.getElementById('attachdiv');
@@ -44,8 +48,8 @@ window.wposm = (function () {
         var coordspan = document.getElementById('coordinates');
         wp = lang+":"+wp;
         // Search by title
-        link = "https://osm.wikidata.link/search?q="+title;
-        attachdiv.appendChild(am.ahref("mylinkOSMWIKIDATA"," (osm.wikidata.link)","Search on osm.wikidata.link",link));
+        // link = "https://osm.wikidata.link/search?q="+title;
+        // attachdiv.appendChild(am.ahref("mylinkOSMWIKIDATA"," (osm.wikidata.link)","Search on osm.wikidata.link",link));
         link = "http://overpass-turbo.eu/map.html?Q="+overpassquery + outskel;
         // Obtain wikidata
         var wd;
@@ -53,9 +57,9 @@ window.wposm = (function () {
             // Fetch wikidata
             wd = document.getElementById('t-wikibase').getElementsByTagName("a")[0].href;
             wd = wd.replace(/.*\//,"");
-            attachdiv.appendChild(document.createTextNode("; "+wd));
+            am.addText(attachdiv,"; "+wd);
         } catch(err) {
-            attachdiv.appendChild(document.createTextNode("; no wikidata!"));
+            am.addText(attachdiv,"; no wikidata!");
         }
         var overpassquery = encodeURIComponent(
             "[out:json][timeout:25];"+
@@ -63,31 +67,110 @@ window.wposm = (function () {
             'node["wikidata"="'+wd+'"]; way["wikidata"="'+wd+'"]; relation["wikidata"="'+wd+'"];'+ 
             "); out meta; ");
         var outskel = encodeURIComponent(" >; out skel qt; ");
-        var coord;
-        var coord2;
-        var coord3;
+        var coord = [0,0];
+        var coord_ = [0,0];
+        var coord2 = "";
+        var coord3 = "";
         var link;
         var OSMExtension = "";
         try {
             // Fetch coordinates
-            var span = document.getElementsByClassName("geo-default")[0];
-            coord2 = document.getElementsByClassName("geo")[0].innerHTML;
-            coord2 = coord2.replace(/<\/span>/,",").replace(/<.*?>/g,"").replace(/ /g,"").replace(/\;/g,",");
-            coord2 = coord2.replace(/,+/,",");
-            coord = coord2.split(",");
+            if (document.getElementsByClassName("geo") && document.getElementsByClassName("geo")[0]) {
+                coord2 = document.getElementsByClassName("geo")[0].innerHTML;
+                coord2 = coord2.replace(/<\/span>/,",").replace(/<.*?>/g,"").replace(/ /g,"").replace(/\;/g,",");
+                coord2 = coord2.replace(/,+/,",");
+                coord = coord2.split(",");
+                // am.addText(attachdiv," (coord-method-1a-ok)"+coord);
+                console.log("(coord-method-1a-ok)");
+            } else if (document.getElementsByClassName("geo-default") && document.getElementsByClassName("geo-default").length>0) {
+                var span = document.getElementsByClassName("geo-default")[0];
+                coord2 =span.innerHTML;
+                coord2 = coord2.replace(/<\/span>/,",").replace(/<.*?>/g,"").replace(/ /g,"").replace(/\;/g,",");
+                coord2 = coord2.replace(/,+/,",");
+                coord = coord2.split(",");
+                // am.addText(attachdiv," (coord-method-1b-ok)"+coord);
+                console.log("(coord-method-1b-ok)");
+            } else if (document.getElementsByClassName("geo-nondefault") && document.getElementsByClassName("geo-nondefault").length > 0) {
+                var span2 = document.getElementsByClassName("geo-nondefault")[0];
+                coord2 =span2.innerHTML;
+                // console.log(coord2);
+                coord2 = coord2.replace(/<\/span>/,",").replace(/<.*?>/g,"").replace(/ /g,"").replace(/\;/g,",");
+                coord2 = coord2.replace(/,+/,",");
+                coord = coord2.split(",");
+                // am.addText(attachdiv," (coord-method-1c-ok)"+coord2);
+                console.log("(coord-method-1c-ok)");
+            } else {
+                // am.addText(attachdiv," (coord-method-1-fail)");
+                console.log("(coord-method-1-fail)");
+                coord = "";
+                coord2 = "";
+            }
+        } catch(err) {
+            console.log("Unable to retrieve coordinates from wikipage (method 1). "+err);
+            am.addText(attachdiv," (coords!)");
+        }
+        try {
             // Also coordinates from link to geohack tools.wmflabs.org/geohack/geohack.php?....params=40.4865_N_8.7698_E_.....
-            var lks = coordspan.getElementsByTagName("a");
             var lk = "";
-            for (var j = 0; j < lks.length; j++){
-                if (lks[j].href.match(/geohack/g) === null) {
+            var lks;
+            var j = 0;
+            if (coordspan) {
+                lks = coordspan.getElementsByTagName("a");
+                for (j = 0; j < lks.length; j++){
+                    if (lks[j].href.match(/geohack/g) === null) {
+                    } else {
+                        lk = lks[j].href;
+                    }
+                }
+                if (lk === "") {
+                    // am.addText(attachdiv," (coord-method-2b-fail)");
+                    console.log("(coord-method-2b-fail)");
                 } else {
-                    lk = lks[j].href;
+                    coord3 = encodeURI(lk.replace(/.*params=/,"").replace(/\&.*/,""));
+                    // am.addText(attachdiv," (coord-method-2a-ok)"+coord);
+                    console.log("(coord-method-2a-ok)");
+                }
+            } else {
+                lks = document.getElementsByTagName("a");
+                lk = "";
+                for (j = 0; j < lks.length; j++){
+                    if (lks[j].href.match(/geohack/g) === null) {
+                    } else {
+                        lk = lks[j].href;
+                    }
+                }
+                if (lk === "") {
+                    // am.addText(attachdiv," (coord-method-2b-fail)");
+                    console.log("(coord-method-2b-fail)");
+                } else {
+                    coord3 = encodeURI(lk.replace(/.*params=/,"").replace(/\&.*/,""));
+                    // am.addText(attachdiv," (coord-method-2b-ok)"+coord3);
+                    console.log("(coord-method-2b-ok)");
                 }
             }
-            coord3 = encodeURI(lk.replace(/.*params=/,"").replace(/\&.*/,""));
+            coord3 = coord3.replace(/_N_/,",").replace(/_E_.*/,"");
+            if (coord3.match(/_/g)) {
+                console.log("Discarding coords from geohack: "+coord3);
+                coord3="";
+            }
+            coord_ = coord3.split(",");
         } catch(err) {
-            attachdiv.appendChild(document.createTextNode(" (coords!)"));
+            console.log("Unable to retrieve coordinates from wikipage (method 2). "+err);
+            am.addText(attachdiv," (coords!)");
         }
+	if (coord2 !== "" && coord3 !== "") {
+//	    am.addText(attachdiv,", dual coord: "+coord3);
+	    if (coord[0] != coord_[0]) {
+            am.addText(attachdiv,"(mismatch X: "+coord[0]+" " + coord_[0] + ")");
+	    }
+	    if (coord[1] != coord_[1]) {
+            am.addText(attachdiv,"(mismatch Y: "+coord[1]+" " + coord_[1] + ")");
+        }
+//	    am.addText(attachdiv,"; ");
+	}
+	if (coord2 === "" && coord3 !== "") {
+	    coord = coord_;
+	}
         try {
             // Create links
 // OpenStreetMap.org - area
@@ -113,25 +196,30 @@ window.wposm = (function () {
 // Help link
             attachdiv.appendChild(am.ahref("reportIssue"," (HELP)","Report an issue and make suggestions for this Gadget.","https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget"));
         } catch(err) {
-            attachdiv.appendChild(document.createTextNode(" (error: No links!)"));
+            am.addText(attachdiv," (error: No links!)");
         }
         link = "https://overpass-api.de/api/interpreter?data="+overpassquery;
-        return {"link": link, "OSMExtension": OSMExtension, "coord":coord};
+        var hascoords = 1;
+        if (coord2 === '' && coord3 === '') {
+            hascoords = 0;
+        }
+        return {"link": link, "OSMExtension": OSMExtension, "coord":coord, "hascoords":hascoords, "wikidata" : wd};
     };
 
     am.getOSMData = function (obj) {
-        $.ajax({
+                                    $.ajax({
             url: obj.link,
             async: true,
             dataType: "text",
             success: function(responseText) {
-                try {
+                            try {
                     // console.log(responseText);
                     // alert(response.responseText);
                     var op = JSON.parse(responseText);
                     for (var j = 0; j < op.elements.length; j++){
+                        am.addText(attachdiv,"",1);
                         var matchno = j+1;
-                        attachdiv.appendChild(document.createTextNode(" ["+matchno+"]"));
+                        am.addText(attachdiv," ["+matchno+"]");
                         var id = op.elements[j].id;
                         var type = op.elements[j].type;
                         var haswp = "";
@@ -154,7 +242,7 @@ window.wposm = (function () {
                             document.getElementById('mylinkidID').text = " (iD+)";
                             document.getElementById('mylinkidID').title = "Edit object with iD.";
                             if (op.elements.length === 1) {
-                                attachdiv.appendChild(document.createTextNode(" "+haswp+haswd));
+                                am.addText(attachdiv," "+haswp+haswd);
                             } else {
                                 attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+matchno+" on OSM",link));
                             }
@@ -182,7 +270,7 @@ window.wposm = (function () {
                         }
                     }
                     if (op.elements.length === 0) {
-                        attachdiv.appendChild(document.createTextNode("; No OSM object!"));
+                        am.addText(attachdiv,"; No OSM object!",1);
                         // Remove the above elements, as they won't work:
                         //document.getElementById("mylinkidJSON").outerHTML = "";
                         //document.getElementById("mylinkidMAP").outerHTML = "";
@@ -191,12 +279,119 @@ window.wposm = (function () {
                         // Better strategy would be to just remove the links, so the line doesn't shift about.
                         //document.getElementById('mylinkidJSON').href = link ;
                         //document.getElementById('mylinkidMAP').href = link ;
+                    } else {
+                        if (obj.hascoords === 0) {
+                            am.addText(attachdiv,"",1);
+                            am.addText(attachdiv,"The wikipedia/wikidata entry has no coordinates, but is linked to an OSM object. Please copy coordinates from OSM to wikipedia/wikidata.",1);                        
+                        }
                     }
                 } catch(err) {
-                    console.log("error xmlhttp: "+err);
+                    console.log("getOSM data error xmlhttp: "+err);
                 }
             }
         });
+        return 1;
+    };
+
+    am.getLinkData = function (wikidata) {
+        var apiurl = "https://osm.wikidata.link/api/1/item/"+wikidata;
+        var attachhere = document.getElementById('siteNotice');
+        var attachdiv = document.createElement("div");
+        attachdiv.setAttribute('style', 'border: solid 1px blue; padding: 5px; text-align: left;');
+        am.addText(attachdiv,"osm.wikipedia.link: ");
+        attachdiv.id = "attachdiv2";
+        attachhere.appendChild(attachdiv);
+        // Search by title
+        var title = document.getElementById('firstHeading').innerHTML;
+        var link = "https://osm.wikidata.link/search?q="+title;
+        attachdiv.appendChild(am.ahref("mylinkOSMWIKIPEDIA"," (search:"+title+")","Search for title on osm.wikidata.link",link));
+        link = "https://osm.wikidata.link/search?q="+wikidata;
+        attachdiv.appendChild(am.ahref("mylinkOSMWIKIDATA"," (connect:"+wikidata+")","Use osm.wikidata.link to make connection from WD to OSM.",link));
+        var myspan = document.createElement('span');
+        var mytext = document.createTextNode(" ... Retrieving additional matches from osm.wikipedia.link (please be patient) ... ");
+        myspan.id = "temporary";
+        myspan.appendChild(mytext);
+        attachdiv.appendChild(myspan);
+        am.addText(attachdiv,"",1);
+        try {
+                                $.ajax({
+            url: apiurl,
+            async: true,
+            dataType: "text",
+            success: function(responseText) {
+                            try {
+//                    console.log(responseText);
+                    var op = JSON.parse(responseText);
+                    if (op) {
+                        // mytext = document.getElementById('temporary');
+                        myspan.innerHTML = '';
+                        var wdlat = 0;
+                        var wdlon = 0;
+                        var wdhasll = 0;
+                        if (op.wikidata.lat) {
+                            am.addText(attachdiv,"Wikidata_coords=("+op.wikidata.lat+","+op.wikidata.lon+"); ",1);
+                            wdlat = op.wikidata.lat;
+                            wdlon = op.wikidata.lon;
+                            wdhasll = 1;
+                        } else {
+                            am.addText(attachdiv,"Wikidata_coords not available.",1);
+                        }
+                        if (op.found_matches) {
+                            var existing = 0;
+                            var nonexisting = 0;
+                            var querystr = "";
+                            for (var j = 0; j < op.osm.length; j++){
+                                am.addText(attachdiv,"#"+(j+1)+": ");
+                                querystr = querystr + op.osm[j].type + "(" + op.osm[j].id + ");";
+                                attachdiv.appendChild(am.formatosm(op.osm[j],{"compare":wdhasll,"lat":wdlat,"lon":wdlon}));
+                                am.addText(attachdiv,"; ",1);
+                                if (op.osm[j].existing) {
+                                    existing++;
+                                } else {
+                                    nonexisting++;
+                                }
+                            }
+                            if (op.osm.length > 0) {
+                                var overpassquery = encodeURIComponent("[out:json][timeout:25];\n ("+querystr+"); out meta; >; out skel qt;");
+                                link = "http://overpass-turbo.eu/map.html?Q="+overpassquery;
+                                attachdiv.appendChild(am.ahref("myresultsMAPall","(overpass-map with all results)","View overpass interactive map for all results,link)",link));
+                                am.addText(attachdiv," If you cannot see all results, it may be that objects over overlapping.",1);
+                            }
+                            am.addText(attachdiv,"There are "+existing+" OSM objects that are already linked to this wikidata item. There are "+nonexisting+" potential matches.",1);
+                            am.addText(attachdiv," RECOMMENDATION: ");
+                            if (existing === 0) {
+                                am.addText(attachdiv," Given that there is no connection yet, ");
+                                attachdiv.appendChild(am.ahref("mylinkOSMWIKIDATA"," click here to use osm.wikidata.link to make one.","Use osm.wikidata.link to make connection from WD to OSM.",link));
+                                am.addText(attachdiv," Alternatively you can use the iD/JOSM links above. ");
+                            } else if (existing === 1) {
+                                am.addText(attachdiv," Given that there is exactly one connection, it may well be ok. Use the above links to check. ");
+                            } else {
+                                am.addText(attachdiv," Given that there is more than one connection, you may want to use the above links to check tagging. ");
+                            }
+                            am.addText(attachdiv,"",1);
+
+                        } else {
+                            if (op.error) {
+                                am.addText(attachdiv,"The query returned no results, with message: '"+op.error+"'. ",1);
+                                if (op.error === "no coordinates") {
+                                    am.addText(attachdiv,"RECOMMENDATION: add the coordinates to the wikidata item.");
+                                }
+                            } else {
+                                am.addText(attachdiv,"Query message: "+op.response+". ");
+                            }
+                        }
+                    }
+                } catch(err) {
+                    am.addText(attachdiv,"Sorry, the query has failed (error in parse).");
+                    console.log("Parse error xmlhttp: "+err+ "JSON: "+responseText);
+                }
+            }
+        });
+        } catch (err) {
+            am.addText(attachdiv,"Sorry, the query has failed (error in response).");
+            am.addText(attachdiv,"API did not respond.");
+            console.log("API error xmlhttp: "+err);
+        }
         return 1;
     };
 
@@ -209,6 +404,56 @@ window.wposm = (function () {
         return t.value;
     };
 
+    am.formatosm = function (osm, extra) {
+        var element = document.createElement('span');
+        var type= osm.type;
+        var id = osm.id;
+        var text = osm.type+osm.id;
+        var textelement = document.createTextNode(text);
+        element.appendChild(textelement);
+        var link = "http://www.openstreetmap.org/"+type+"/"+id;
+        element.appendChild(am.ahref("mylinkidOSMx"," (OSM)","View object on OSM",link));
+        link = "http://www.openstreetmap.org/edit?"+type+"="+id;
+        element.appendChild(am.ahref("mylinkidOSMx"," (iD)","Edit object in iD",link));
+        link = "http://127.0.0.1:8111/load_object?objects="+type+id+"&new_layer=false";
+        element.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object with JOSM (same layer)",link));
+        text = "(";
+        var distance = 0;
+        var lat = 0;
+        var lon = 0;
+        if (osm.center) {
+            text = text + "C: ";
+            lat = osm.center.lat;
+            lon = osm.center.lon;
+        } else {
+            lat = osm.lat;
+            lon = osm.lon;
+        }
+        text = text +lat+","+lon;
+        text = text + "; "+osm.existing+")";
+        if (extra.compare) {
+            if (extra.compare==1) {
+                distance = am.distance(lat,lon,extra.lat,extra.lon);
+                // text = text +", "+extra.lat+" "+extra.lon+", d=" + distance;
+                text = text + ", d=" + distance;
+                var maxd = 300;
+                if (distance>maxd) {
+                    text = text + ", DISTANCE > "+maxd+"m";
+                }
+            }
+        }
+        textelement = document.createTextNode(text);
+        element.appendChild(textelement);
+        return element;
+    };
+
+    am.addText = function(obj,text,br) {
+        obj.appendChild(document.createTextNode(text));
+        if (br == 1) {
+            obj.appendChild(document.createElement('br'));
+        }
+    };
+
     am.ahref = function (id, text, title, href) {
         var a = document.createElement("a");
         a.appendChild(document.createTextNode(text));
@@ -217,6 +462,16 @@ window.wposm = (function () {
         a.href = href;
         return a;
     };
+    
+    am.distance = function(lat, lon, lat2, lon2) {
+        var pi = Math.PI;
+        var rad = pi/180.0;
+        var dx = (lon - lon2)*rad * Math.cos((lat + lat2)/2*rad);
+        var dy = (lat - lat2)*rad ;
+        var dd = Math.pow(Math.pow(dx,2) + Math.pow(dy,2),0.5) * 6371.0 * 1000.0;
+        return Math.round(dd);
+    };
+
 	return wposmObj;
 }());
 $(wposm.init);
