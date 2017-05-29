@@ -66,7 +66,7 @@ window.wposm = (function () {
             '(node["wikipedia"="'+wp+'"];way["wikipedia"="'+wp+'"];relation["wikipedia"="'+wp+'"];'+
             'node["wikidata"="'+wd+'"]; way["wikidata"="'+wd+'"]; relation["wikidata"="'+wd+'"];'+
             "); out meta; ");
-        var outskel = encodeURIComponent(" >; out skel qt; "+"{{style: node, way, relation { text: name; } }}");
+        var outskel = encodeURIComponent(" >; out skel qt; "+"{{style: node, way, relation { text: name; }\nnode {color: blue;}\nway { color: green;}\nrelation {color:pink; fill-opacity: 0;} }}");
         var coord = [0,0];
         var coord_ = [0,0];
         var coord2 = "";
@@ -184,7 +184,7 @@ window.wposm = (function () {
             attachdiv.appendChild(am.ahref("mylinkidID"," (iD)","Edit area with iD",link));
 // JOSM - add node
             link = "http://127.0.0.1:8111/add_node?lat="+coord[0]+"&lon="+coord[1]+"&addtags="+"name="+title+encodeURI("|source=wikipedia|wikidata="+wd+"|wikipedia=")+lang+":"+title;
-            attachdiv.appendChild(am.ahref("mylinkidJOSM"," (JOSM)","Add node with JOSM",link));
+            attachdiv.appendChild(am.ahref("mylinkidJOSM"," (JOSM)","Add node with JOSM",link,1));
 // Overpass-turbo - map
             link = "http://overpass-turbo.eu/map.html?Q="+overpassquery+outskel;
             attachdiv.appendChild(am.ahref("mylinkidMAP"," (overpass-map)","View overpass interactive map for wikidata:"+wd,link));
@@ -212,6 +212,12 @@ window.wposm = (function () {
         myspan.id = "temporary";
         myspan.appendChild(mytext);
         attachdiv.appendChild(myspan);
+        am.addText(attachdiv,"",1);
+        if (obj.hascoords==1) {
+            am.addText(attachdiv,"Wikipedia_page_coords=("+obj.coord[0]+","+obj.coord[1]+"); ",1);
+        } else {
+            am.addText(attachdiv,"Wikipedia_page_coords not available.",1);
+        }
         try {
                                 $.ajax({
             url: obj.link,
@@ -224,10 +230,12 @@ window.wposm = (function () {
                     var op = JSON.parse(responseText);
                     if (op) {
                         myspan.innerHTML = '';
+                        var ol = document.createElement("ol");
                         for (var j = 0; j < op.elements.length; j++){
-                            am.addText(attachdiv,"",1);
+                            var li = document.createElement("li");
+//                            am.addText(li,"",1);
                             var matchno = j+1;
-                            am.addText(attachdiv," ["+matchno+"]");
+//                            am.addText(li," ["+matchno+"]");
                             var id = op.elements[j].id;
                             var type = op.elements[j].type;
                             var haswp = "";
@@ -249,14 +257,16 @@ window.wposm = (function () {
                                 document.getElementById('mylinkidID').href = linkID;
                                 document.getElementById('mylinkidID').text = " (iD+)";
                                 document.getElementById('mylinkidID').title = "Edit object with iD.";
+				/*
                                 if (op.elements.length === 1) {
-                                    am.addText(attachdiv," "+haswp+haswd);
+                                    am.addText(li," "+haswp+haswd+". ");
                                 } else {
-                                    attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+matchno+" on OSM",link));
-                                }
-                            } else {
-                                attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+matchno+" on OSM",link));
-                            }
+                                    li.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+matchno+" on OSM",link));
+                                } */
+                            } /* else {
+                                li.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+matchno+" on OSM",link));
+                            } */
+                            am.addText(li," "+haswp+haswd+". ");
                             var factor = 0.005;
                             var left = parseFloat(obj.coord[1]) - factor;
                             var right = parseFloat(obj.coord[1]) + factor;
@@ -270,15 +280,20 @@ window.wposm = (function () {
                                 document.getElementById('mylinkidJOSM').href = link ;
                                 document.getElementById('mylinkidJOSM').text = " (JOSM+)" ;
                                 document.getElementById('mylinkidJOSM').title = "Load object with JSON." ;
-                                if (op.elements.length > 1) {
-                                    attachdiv.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object "+j+" with JOSM (same layer)",link));
+                                /* if (op.elements.length > 1) {
+                                    li.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object "+j+" with JOSM (same layer)",link));
                                 }
                             } else {
-                                attachdiv.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object "+j+" with JOSM (same layer)",link));
+                                li.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object "+j+" with JOSM (same layer)",link));
+				            */
                             }
+                            li.appendChild(am.formatosm(op.elements[j],{"compare": obj.hascoords, "wikidata": obj.wikidata,
+									"lat":obj.coord[0],"lon":obj.coord[1]}));
+                            ol.appendChild(li);
                         }
+                        attachdiv.appendChild(ol);
                         if (op.elements.length === 0) {
-                            am.addText(attachdiv,"; No OSM object!",1);
+                            am.addText(attachdiv,"No OSM object! Check data for osm.wikidata.link below for potential matches. ",1);
                             // Remove the above elements, as they won't work:
                             //document.getElementById("mylinkidJSON").outerHTML = "";
                             //document.getElementById("mylinkidMAP").outerHTML = "";
@@ -298,7 +313,9 @@ window.wposm = (function () {
                     }
                 } catch(err) {
                     console.log("getOSM data error xmlhttp: "+err);
-                    am.addText(attachdiv," Sorry, the overpass request has failed. If you've loaded a lot of pages, you may be over quota - try reloading this page.",1);
+                    am.addText(attachdiv," Sorry, the overpass request has failed. If you've loaded a lot of pages, you may be over quota - try reloading this page.");
+                    attachdiv.appendChild(am.ahref("checkStatus"," You can check your API status here","Check overpass API status.","http://overpass-api.de/api/status"));
+                    am.addText(attachdiv,"",1);
                 }
             }
         });
@@ -382,7 +399,7 @@ window.wposm = (function () {
                                 var overpassquery = encodeURIComponent("[out:json][timeout:25];\n"+
                                                                        "("+querystr+querystrRel+");\nout meta; >; out skel qt; "+
                                                                        "("+querystrRel+");\nout bb;\n"+
-                                                                       "{{style: node, way, relation { text: name; }\nrelation {color:blue;} }}");
+                                                                       "{{style: node, way, relation { text: name; }\nnode {color: blue;}\nway { color: green;}\nrelation {color:pink; fill-opacity: 0;} }}");
                                 link = "http://overpass-turbo.eu/map.html?Q="+overpassquery;
                                 attachdiv.appendChild(am.ahref("myresultsMAPall","(overpass-map with all results)","View overpass interactive map for all results,link)",link));
                                 link = "http://overpass-turbo.eu/?Q="+overpassquery;
@@ -448,20 +465,35 @@ window.wposm = (function () {
                 wikidata = extra.wikidata;
             }
         }
+        var color = "white";
+        switch(osm.type) {
+            case "node":
+                color = "blue";
+                break;
+            case "way":
+                color = "green";
+                break;
+            case "relation":
+                color = "purple";
+                break;
+            default:
+
+        }
         if (osm.tags) {
             if (osm.tags.name) {
-                text = text + "" + osm.tags.name + "; ";
-                element.innerHTML = "<b>"+text+"</b>";
-                text = "";
+                text = text + "" + osm.tags.name + "";
+                element.innerHTML = "<b style=\"color: "+color+";\">"+text+"</b>. ";
+                //                text = ". ";
             }
             if (osm.tags.wikidata) {
                 if (osm.tags.wikidata != wikidata) {
-                    text += " - WIKIDATA TAG MISMATCH! ";
+                    element.innerHTML += " <b style=\"background-color: pink;\">WIKIDATA TAG MISMATCH!</b>";
                 } else {
-                    text += " - wikidata match! ";
+                    element.innerHTML += " <i style=\"background-color: lightgreen;\">wikidata match!</i> ";
                 }
             }
         }
+        text = "";
         text = text + osm.type+osm.id;
         var textelement = document.createTextNode(text);
         element.appendChild(textelement);
@@ -476,35 +508,48 @@ window.wposm = (function () {
         link = "http://www.openstreetmap.org/edit?"+type+"="+id;
         element.appendChild(am.ahref("mylinkidOSMx"," (iD)","Edit object in iD",link));
         link = "http://127.0.0.1:8111/load_object?objects="+type+id+"&new_layer=false";
-        element.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object with JOSM (same layer)",link));
+        element.appendChild(am.ahref("mylinkidJOSMx"," (JOSM,","Load object with JOSM (same layer)",link,1));
+        link = "http://127.0.0.1:8111/load_object?objects="+type+id+"&new_layer=false&addtags=wikidata="+wikidata;
+        element.appendChild(am.ahref("mylinkidJOSMxEdit"," add) ","Add wikidata to with JOSM (same layer)",link,1));
         text = "(";
         var distance = 0;
-        var lat = 0;
-        var lon = 0;
+        var lat = "";
+        var lon = "";
         if (osm.center) {
             text = text + "C: ";
             lat = osm.center.lat;
             lon = osm.center.lon;
-        } else {
+        } else if (osm.lat) {
             lat = osm.lat;
             lon = osm.lon;
         }
-        text = text +lat+","+lon;
-        text = text + "; "+osm.existing+")";
-        if (extra.compare) {
+        if (lat !== "") {
+            text = text +lat+","+lon;
+        }
+        if (osm.existing) {
+            text = text + "; "+osm.existing;
+        }
+        text += ")";
+        textelement = document.createTextNode(text);
+        element.appendChild(textelement);
+        if (extra.compare && lat !== "") {
+	    text = "";
             if (extra.compare==1) {
                 distance = am.distance(lat,lon,extra.lat,extra.lon);
                 // text = text +", "+extra.lat+" "+extra.lon+", d=" + distance;
-                text = text + ", d=" + distance;
+                text = text + ", d=" + distance + "m";
                 var maxd = 300;
                 if (distance>maxd) {
-                    text = text + ", DISTANCE > "+maxd+"m";
+                    text = text + ", <b style=\"background-color: pink;\">DISTANCE > "+maxd+"m</b>";
+                }
+                if (osm.distance) {
+                    text = text + ", "+osm.distance+"m";
                 }
             }
-        }
-        textelement = document.createTextNode(text);
-        element.appendChild(textelement);
-        element.appendChild(document.createElement('br'));
+            element.innerHTML += text;
+	    text = "";	    
+	}
+         element.appendChild(document.createElement('br'));
         text = JSON.stringify(osm.tags);
 //        text = text.replace("/\"\,\"/g","\", \"");
         text = text.replace(/","/g,'", "');
@@ -520,14 +565,48 @@ window.wposm = (function () {
         }
     };
 
-    am.ahref = function (id, text, title, href) {
+    am.ahref = function (id, text, title, href, onclick) {
         var a = document.createElement("a");
         a.appendChild(document.createTextNode(text));
         a.id = id;
         a.title = title;
         a.href = href;
+        if (onclick) {
+            if (onclick==1) {
+                /*
+                // Block href from doing anyhing
+                a.href = "javascript:(function() { return false; }());";
+                // a.href = "";
+                // This works but only for the uppper box, strangely not for the lower box...
+                a.onclick = function() { opencloseWin(href); return false; };
+                // a.addEventListener("click", amyfunc, false );
+                */
+                // This works for both:
+                a.href = "javascript:(function() {  var myWindow = window.open(\""+href+"\", \"_new\"); setTimeout(function() { myWindow.close(); }, 1000); return false; }());";
+            }
+        }
         return a;
     };
+/*
+function(){ opencloseWin(href); return false;}
+*/
+    function myfunc() {
+        alert('hello');
+        return false;
+    }
+
+    function opencloseWin(url) {
+        var myWindow;
+        try {
+            myWindow = window.open(url, "_new");
+        } catch (err) {
+            console.log(err);
+        }
+        setTimeout(function() {
+            myWindow.close();
+        }, 1000);
+        return false;
+    }
 
     am.distance = function(lat, lon, lat2, lon2) {
         var pi = Math.PI;
