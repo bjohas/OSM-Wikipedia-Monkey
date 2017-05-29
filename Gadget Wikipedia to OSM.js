@@ -207,7 +207,13 @@ window.wposm = (function () {
     };
 
     am.getOSMData = function (obj) {
-                                    $.ajax({
+        var myspan = document.createElement('span');
+        var mytext = document.createTextNode(" ... Fetching data from overpass (should only take a sec) ... ");
+        myspan.id = "temporary";
+        myspan.appendChild(mytext);
+        attachdiv.appendChild(myspan);
+        try {
+                                $.ajax({
             url: obj.link,
             async: true,
             dataType: "text",
@@ -216,80 +222,89 @@ window.wposm = (function () {
                     // console.log(responseText);
                     // alert(response.responseText);
                     var op = JSON.parse(responseText);
-                    for (var j = 0; j < op.elements.length; j++){
-                        am.addText(attachdiv,"",1);
-                        var matchno = j+1;
-                        am.addText(attachdiv," ["+matchno+"]");
-                        var id = op.elements[j].id;
-                        var type = op.elements[j].type;
-                        var haswp = "";
-                        if (op.elements[j].tags.wikipedia) {
-                            haswp = "WP";
-                        }
-                        var haswd ="";
-                        if (op.elements[j].tags.wikidata) {
-                            haswd = "WD";
-                        }
-                        link = "http://www.openstreetmap.org/"+type+"/"+id;
-                        var linkID = "http://www.openstreetmap.org/edit?"+type+"="+id;
-                        // At least for the first link, rather than appending, we could replace the earlier link.
-                        if (j===0) {
-                            document.getElementById('mylinkidOSM').href = link + obj.OSMExtension;
-                            // document.getElementById('mylinkidOSM').text = " (OSM/"+type+id+")";
-                            document.getElementById('mylinkidOSM').text = " (OSM+)";
-                            document.getElementById('mylinkidOSM').title = "View object on OSM.org.";
-                            document.getElementById('mylinkidID').href = linkID;
-                            document.getElementById('mylinkidID').text = " (iD+)";
-                            document.getElementById('mylinkidID').title = "Edit object with iD.";
-                            if (op.elements.length === 1) {
-                                am.addText(attachdiv," "+haswp+haswd);
+                    if (op) {
+                        myspan.innerHTML = '';
+                        for (var j = 0; j < op.elements.length; j++){
+                            am.addText(attachdiv,"",1);
+                            var matchno = j+1;
+                            am.addText(attachdiv," ["+matchno+"]");
+                            var id = op.elements[j].id;
+                            var type = op.elements[j].type;
+                            var haswp = "";
+                            if (op.elements[j].tags.wikipedia) {
+                                haswp = "WP";
+                            }
+                            var haswd ="";
+                            if (op.elements[j].tags.wikidata) {
+                                haswd = "WD";
+                            }
+                            link = "http://www.openstreetmap.org/"+type+"/"+id;
+                            var linkID = "http://www.openstreetmap.org/edit?"+type+"="+id;
+                            // At least for the first link, rather than appending, we could replace the earlier link.
+                            if (j===0) {
+                                document.getElementById('mylinkidOSM').href = link + obj.OSMExtension;
+                                // document.getElementById('mylinkidOSM').text = " (OSM/"+type+id+")";
+                                document.getElementById('mylinkidOSM').text = " (OSM+)";
+                                document.getElementById('mylinkidOSM').title = "View object on OSM.org.";
+                                document.getElementById('mylinkidID').href = linkID;
+                                document.getElementById('mylinkidID').text = " (iD+)";
+                                document.getElementById('mylinkidID').title = "Edit object with iD.";
+                                if (op.elements.length === 1) {
+                                    am.addText(attachdiv," "+haswp+haswd);
+                                } else {
+                                    attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+matchno+" on OSM",link));
+                                }
                             } else {
                                 attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+matchno+" on OSM",link));
                             }
-                        } else {
-                            attachdiv.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+matchno+" on OSM",link));
-                        }
-                        var factor = 0.005;
-                        var left = parseFloat(obj.coord[1]) - factor;
-                        var right = parseFloat(obj.coord[1]) + factor;
-                        var bottom = parseFloat(obj.coord[0]) - factor;
-                        var top = parseFloat(obj.coord[0]) + factor;
-                        var pos = "right="+right+"&left="+left+"&top="+top+"&bottom="+bottom;
-                        // load_and_zoom - would also load area:
-                        // link = "http://127.0.0.1:8111/load_and_zoom?"+pos+"&new_layer=false&select="+type+id;
-                        var link = "http://127.0.0.1:8111/load_object?objects="+type+id+"&new_layer=false";
-                        if (j===0) {
-                            document.getElementById('mylinkidJOSM').href = link ;
-                            document.getElementById('mylinkidJOSM').text = " (JOSM+)" ;
-                            document.getElementById('mylinkidJOSM').title = "Load object with JSON." ;
-                            if (op.elements.length > 1) {
+                            var factor = 0.005;
+                            var left = parseFloat(obj.coord[1]) - factor;
+                            var right = parseFloat(obj.coord[1]) + factor;
+                            var bottom = parseFloat(obj.coord[0]) - factor;
+                            var top = parseFloat(obj.coord[0]) + factor;
+                            var pos = "right="+right+"&left="+left+"&top="+top+"&bottom="+bottom;
+                            // load_and_zoom - would also load area:
+                            // link = "http://127.0.0.1:8111/load_and_zoom?"+pos+"&new_layer=false&select="+type+id;
+                            var link = "http://127.0.0.1:8111/load_object?objects="+type+id+"&new_layer=false";
+                            if (j===0) {
+                                document.getElementById('mylinkidJOSM').href = link ;
+                                document.getElementById('mylinkidJOSM').text = " (JOSM+)" ;
+                                document.getElementById('mylinkidJOSM').title = "Load object with JSON." ;
+                                if (op.elements.length > 1) {
+                                    attachdiv.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object "+j+" with JOSM (same layer)",link));
+                                }
+                            } else {
                                 attachdiv.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object "+j+" with JOSM (same layer)",link));
                             }
+                        }
+                        if (op.elements.length === 0) {
+                            am.addText(attachdiv,"; No OSM object!",1);
+                            // Remove the above elements, as they won't work:
+                            //document.getElementById("mylinkidJSON").outerHTML = "";
+                            //document.getElementById("mylinkidMAP").outerHTML = "";
+                            document.getElementById("mylinkidJSON").outerHTML = " (overpass-JSON)";
+                            document.getElementById("mylinkidMAP").outerHTML = " (overpass-map)";
+                            // Better strategy would be to just remove the links, so the line doesn't shift about.
+                            //document.getElementById('mylinkidJSON').href = link ;
+                            //document.getElementById('mylinkidMAP').href = link ;
                         } else {
-                            attachdiv.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object "+j+" with JOSM (same layer)",link));
+                            if (obj.hascoords === 0) {
+                                am.addText(attachdiv,"",1);
+                                am.addText(attachdiv,"The wikipedia/wikidata entry has no coordinates, but is linked to an OSM object. Please copy coordinates from OSM to wikipedia/wikidata.",1);                        
+                            }
                         }
-                    }
-                    if (op.elements.length === 0) {
-                        am.addText(attachdiv,"; No OSM object!",1);
-                        // Remove the above elements, as they won't work:
-                        //document.getElementById("mylinkidJSON").outerHTML = "";
-                        //document.getElementById("mylinkidMAP").outerHTML = "";
-                        document.getElementById("mylinkidJSON").outerHTML = " (overpass-JSON)";
-                        document.getElementById("mylinkidMAP").outerHTML = " (overpass-map)";
-                        // Better strategy would be to just remove the links, so the line doesn't shift about.
-                        //document.getElementById('mylinkidJSON').href = link ;
-                        //document.getElementById('mylinkidMAP').href = link ;
                     } else {
-                        if (obj.hascoords === 0) {
-                            am.addText(attachdiv,"",1);
-                            am.addText(attachdiv,"The wikipedia/wikidata entry has no coordinates, but is linked to an OSM object. Please copy coordinates from OSM to wikipedia/wikidata.",1);                        
-                        }
+                        am.addText(attachdiv," Sorry, the overpass request has failed (no data).",1);
                     }
                 } catch(err) {
                     console.log("getOSM data error xmlhttp: "+err);
+                    am.addText(attachdiv," Sorry, the overpass request has failed. If you've loaded a lot of pages, you may be over quota - try reloading this page.",1);
                 }
             }
         });
+        } catch(err) {
+            console.log("getOSM error in domain request: "+err);
+        }
         return 1;
     };
 
@@ -299,7 +314,7 @@ window.wposm = (function () {
         var attachdiv = document.createElement("div");
         attachdiv.setAttribute('style', 'border: solid 1px blue; padding: 5px; text-align: left;');
         // am.addText(attachdiv,"osm.wikipedia.link: ");
-        attachdiv.appendChild(am.ahref("osmwplinksite","osm.wikipedia.link","Go to osm.wikidata.link","https://osm.wikipedia.link"));
+        attachdiv.appendChild(am.ahref("osmwplinksite","osm.wikidata.link","Go to osm.wikidata.link","https://osm.wikidata.link"));
         attachdiv.appendChild(am.ahref("osmwplinkAPI"," (query) ","API url: "+apiurl,apiurl));
         attachdiv.id = "attachdiv2";
         attachhere.appendChild(attachdiv);
