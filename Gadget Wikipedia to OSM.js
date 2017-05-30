@@ -2,7 +2,6 @@
 // * The organisation of the code below is based on [[en:MediaWiki:Gadget-metadata.js]]
 // * To learn more about this script, visit https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget
 window.wposm = (function () {
-
     var wposmObj = {
         props: {},
         methods: {}
@@ -35,10 +34,12 @@ window.wposm = (function () {
             if (ap.addBasicsResult) {
                 console.log("getOSMData");
                 am.getOSMData(ap.addBasicsResult);
+		/* // Moved this down - only make ths request when the OSM request is done, otherwise issue with results ordering.
                 if (ap.addBasicsResult.wikidata) {
                     console.log("osm.wikipedia.link");
-                    am.getLinkData(ap.addBasicsResult.wikidata);
+                    am.getLinkData(ap.addBasicsResult);
                 }
+		*/
             }
         } else {
         }
@@ -288,6 +289,7 @@ window.wposm = (function () {
 //                            am.addText(li," ["+matchno+"]");
                             var id = op.elements[j].id;
                             var type = op.elements[j].type;
+			    li.id = type + id;
                             var haswp = "";
                             if (op.elements[j].tags.wikipedia) {
                                 haswp = "WP";
@@ -355,7 +357,7 @@ window.wposm = (function () {
                         } else {
                             if (obj.hascoords === 0) {
                                 am.addText(attachdiv,"",1);
-                                am.addText(attachdiv,"The wikipedia/wikidata entry has no coordinates, but is linked to an OSM object. Please copy coordinates from OSM to wikipedia/wikidata.",1);                        
+                                am.addText(attachdiv,"The wikipedia/wikidata entry has no coordinates, but is linked to an OSM object. Please do not copy coordinates from OSM to wikipedia/wikidata.",1);                        
                             }
                         }
                     } else {
@@ -367,6 +369,10 @@ window.wposm = (function () {
                     attachdiv.appendChild(am.ahref("checkStatus"," You can check your API status here","Check overpass API status.","http://overpass-api.de/api/status"));
                     am.addText(attachdiv,"",1);
                 }
+                if (obj.wikidata) {
+                    console.log("osm.wikipedia.link");
+                    am.getLinkData(obj);
+                }
             }
         });
         } catch(err) {
@@ -375,7 +381,8 @@ window.wposm = (function () {
         return 1;
     };
 
-    am.getLinkData = function (wikidata) {
+    am.getLinkData = function (obj) {
+	var wikidata = obj.wikidata;
         var apiurl = "https://osm.wikidata.link/api/1/item/"+wikidata;
         var attachhere = document.getElementById('siteNotice');
         var attachdiv = document.createElement("div");
@@ -417,10 +424,20 @@ window.wposm = (function () {
                             var OSMExtension = "?zoom=18&mlat="+op.wikidata.lat+"&mlon="+op.wikidata.lon;
                             link = "http://www.openstreetmap.org/"+OSMExtension;
                             attachdiv.appendChild(am.ahref("mylinkidOSM",op.wikidata.lat+","+op.wikidata.lon,"View area in OSM",link));
-                            am.addText(attachdiv,"); ",1);
+                            am.addText(attachdiv,"); ");
                             wdlat = op.wikidata.lat;
                             wdlon = op.wikidata.lon;
                             wdhasll = 1;
+			    if (obj.hascoords) {
+				var distance = am.distance(parseFloat(obj.coord[0]),parseFloat(obj.coord[1]),wdlat,wdlon);
+				am.addText(attachdiv,"d(WD,WP)="+distance+"m");
+				var maxd = 300;
+				if (distance>maxd) {
+				    am.addHTML(attachdiv,", <b style=\"background-color: pink;\">DISTANCE > "+maxd+"m</b>"+
+					       " (Please/check amend wikipedia/wikidata coordinates.)");
+				}
+			    }
+			    am.addText(attachdiv,"",1);
                         } else {
                             am.addText(attachdiv,"Wikidata_coords not available.",1);
                         }
@@ -437,10 +454,24 @@ window.wposm = (function () {
                                 } else {
                                     querystr = querystr + op.osm[j].type + "(" + op.osm[j].id + ");\n";
                                 }
-                                li = document.createElement("li");
+				var liid = op.osm[j].type + op.osm[j].id;
+				var duplicate = false;
+				if (document.getElementById(liid)) {
+				    li = document.getElementById(liid);
+				    am.addText(li,"",1);
+				    am.addHTML(li,"<b>Matcher result (existing):</b> ");
+				    duplicate = true;
+//				    console.log("Entry exists.");
+				} else {
+                                    li = document.createElement("li");				   
+				    li.id = op.osm[j].type + op.osm[j].id;
+				    am.addHTML(li,"<b>Matcher result (new):</b> ");
+//				    console.log("Entry ! exists.");
+				};
                                 // am.addText(li,"#"+(j+1)+": ");
                                 li.appendChild(am.formatosm(op.osm[j],{"compare":wdhasll,"lat":wdlat,"lon":wdlon,"wikidata":wikidata}));
-                                ol.appendChild(li);
+				if (!duplicate) 
+                                    ol.appendChild(li);
                                 // am.addText(attachdiv,"; ",1);
                                 if (op.osm[j].existing) {
                                     existing++;
@@ -476,12 +507,13 @@ window.wposm = (function () {
 
                         } else {
                             if (op.error) {
-                                am.addText(attachdiv,"The query returned no results, with message: '"+op.error+"'. ",1);
+                                am.addText(attachdiv,"The query returned no results, with error message: '"+op.error+"'. ",1);
                                 if (op.error === "no coordinates") {
                                     am.addText(attachdiv,"RECOMMENDATION: add the coordinates to the wikidata item.");
                                 }
                             } else {
-                                am.addText(attachdiv,"Query message: "+op.response+". ");
+                                am.addText(attachdiv,"The query returned no results, with message: "+op.response+". ",1);
+				am.addText(attachdiv,"QSM query parameters: "+JSON.stringify(op.search).replace(/","/g,'", "'));
                             }
                         }
                     }
@@ -594,7 +626,7 @@ window.wposm = (function () {
                 text = text + ", d=" + distance + "m";
                 var maxd = 300;
                 if (distance>maxd) {
-                    text = text + ", <b style=\"background-color: pink;\">DISTANCE > "+maxd+"m</b>";
+                    text = text + ", <b style=\"background-color: pink;\">DISTANCE > "+maxd+"m</b> (Please/check amend wikipedia/wikidata coordinates.)";
                 }
                 if (osm.distance) {
                     text = text + ", "+osm.distance+"m";
@@ -619,6 +651,12 @@ window.wposm = (function () {
         }
     };
 
+    am.addHTML = function(obj,text,br) {
+	var myspan = document.createElement('span');
+        myspan.innerHTML = text;	   
+        obj.appendChild(myspan);
+    };
+    
     am.ahref = function (id, text, title, href, onclick) {
         var a = document.createElement("a");
         a.appendChild(document.createTextNode(text));
@@ -663,15 +701,15 @@ function(){ opencloseWin(href); return false;}
     }
 
     am.distance = function(lat, lon, lat2, lon2) {
-        console.log(lat, lon, lat2, lon2);
+//        console.log(lat, lon, lat2, lon2);
         var pi = Math.PI;
         var rad = pi/180.0;
         var dx = (lon - lon2)*rad * Math.cos((lat + lat2)/2*rad);
-        console.log(dx);
+//        console.log(dx);
         var dy = (lat - lat2)*rad ;
-        console.log(dy);
+//        console.log(dy);
         var dd = Math.pow(Math.pow(dx,2) + Math.pow(dy,2),0.5) * 6371.0 * 1000.0;
-        console.log(dd);
+//        console.log(dd);
         return Math.round(dd);
     };
 
