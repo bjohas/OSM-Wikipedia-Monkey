@@ -248,7 +248,7 @@ window.wposm = (function () {
             link = "http://www.openstreetmap.org/edit?zoom=18&mlat="+coord[0]+"&mlon="+coord[1]; // +"&lang="+lang+"&wikidata="+wd+"&wikipedia="+lang+":"+title;
             attachdiv.appendChild(am.ahref("mylinkidID"," (iD)","Edit area with iD",link));
 // JOSM - add node
-            link = "http://127.0.0.1:8111/add_node?lat="+coord[0]+"&lon="+coord[1]+"&addtags="+encodeURIComponent("name="+encodeURIComponent(title)+encodeURI("|source=wikipedia|wikidata="+wd+"|wikipedia=")+lang+":"+encodeURIComponent(title));
+            link = "http://127.0.0.1:8111/add_node?lat="+coord[0]+"&lon="+coord[1]+"&addtags="+encodeURIComponent("name="+encodeURIComponent(title)+encodeURI("|source=wikidata,wikipedia|wikidata="+wd+"|wikipedia=")+lang+":"+encodeURIComponent(title));
             attachdiv.appendChild(am.ahref("mylinkidJOSM"," (JOSM)","Add node with JOSM",link,1));
 // Overpass-turbo - map
             link = "https://overpass-turbo.eu/map.html?Q="+overpassmap;
@@ -266,8 +266,9 @@ window.wposm = (function () {
             am.addText(attachdiv," (error: No links!)");
 	    console.log(err);
         }
-	// overpassapi = "https://overpass.osm.rambler.ru/cgi";
+	overpassapi = "http://overpass.osm.rambler.ru/cgi";
         link = overpassapi + "/interpreter?data="+overpassquery;
+//	console.log(link);
         var hascoords = 1;
         if (coord2 === '' && coord3 === '') {
             hascoords = 0;
