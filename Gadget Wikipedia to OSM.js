@@ -266,7 +266,9 @@ window.wposm = (function () {
             am.addText(attachdiv," (error: No links!)");
 	    console.log(err);
         }
-	overpassapi = "http://overpass.osm.rambler.ru/cgi";
+	// Won't work on wikipedia as it doesn't serve over https...
+	//	overpassapi = "http://overpass.osm.rambler.ru/cgi";
+	overpassapi = "https://api.openstreetmap.fr/oapi";
         link = overpassapi + "/interpreter?data="+overpassquery;
 //	console.log(link);
         var hascoords = 1;
