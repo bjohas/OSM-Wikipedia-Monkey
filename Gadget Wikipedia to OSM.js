@@ -209,13 +209,14 @@ window.wposm = (function () {
             console.log("Unable to retrieve coordinates from wikipage (method 2). "+err);
             am.addText(attachdiv," (coords!)");
         }
+	var coordissues = "";
 	if (coord2 !== "" && coord3 !== "") {
 //	    am.addText(attachdiv,", dual coord: "+coord3,1);
 	    if (coord[0] != coord_[0]) {
-		am.addHTML(attachdiv," <b style=\"background-color: pink;\">(mismatch/WP lat: "+am.distance(parseFloat(coord[0]),parseFloat(coord[1]),parseFloat(coord_[0]),parseFloat(coord_[1])) + "m)</b>");
+		coordissues += " <b style=\"background-color: pink;\">(mismatch/WP lat: "+am.distance(parseFloat(coord[0]),parseFloat(coord[1]),parseFloat(coord_[0]),parseFloat(coord_[1])) + "m)</b>";
 	    }
 	    if (coord[1] != coord_[1]) {
-		am.addHTML(attachdiv," <b style=\"background-color: pink;\">(mismatch/WP lon: "+am.distance(parseFloat(coord[0]),parseFloat(coord[1]),parseFloat(coord_[0]),parseFloat(coord_[1])) + "m)</b>");
+		coordissues += " <b style=\"background-color: pink;\">(mismatch/WP lon: "+am.distance(parseFloat(coord[0]),parseFloat(coord[1]),parseFloat(coord_[0]),parseFloat(coord_[1])) + "m)</b>";
         }
 	}
 	if (coord2 === "" && coord3 !== "") {
@@ -263,7 +264,7 @@ window.wposm = (function () {
         if (coord2 === '' && coord3 === '') {
             hascoords = 0;
         }
-        return {"link": link, "OSMExtension": OSMExtension, "coord":coord, "hascoords":hascoords, "wikidata" : wd};
+        return {"link": link, "OSMExtension": OSMExtension, "coord":coord, "hascoords":hascoords, "wikidata" : wd,"coordissues":coordissues};
     };
 
     am.getOSMData = function (obj) {
@@ -273,9 +274,10 @@ window.wposm = (function () {
 	}
 	am.addHTML(attachdiv,"<b>Overpass:</b> ");
 	var myspan = document.createElement('span');
-        var mytext = document.createTextNode(" ... Fetching data from overpass (should only take a sec) ... ");
+        //var mytext = document.createTextNode(" ... Fetching data from overpass (should only take a sec) ... ");
         myspan.id = "temporary";
-        myspan.appendChild(mytext);
+	am.addHTML(myspan,"<i style=\"background-color: yellow;\"> ... Fetching data from overpass (should only take a sec) ... </i>");
+        //myspan.appendChild(mytext);
         attachdiv.appendChild(myspan);
         var link = "";
         if (obj.hascoords==1) {
@@ -283,7 +285,10 @@ window.wposm = (function () {
             var OSMExtension = "?zoom=18&mlat="+obj.coord[0]+"&mlon="+obj.coord[1];
             link = "http://www.openstreetmap.org/"+OSMExtension;
             attachdiv.appendChild(am.ahref("mylinkidOSM",obj.coord[0]+","+obj.coord[1],"View area in OSM",link));
-            am.addText(attachdiv,"); ",1);
+            am.addText(attachdiv,") ");
+	    if (obj.coordissues)
+		am.addHTML(attachdiv,obj.coordissues);
+            am.addText(attachdiv,"; ",1);
         } else {
             am.addText(attachdiv,"Wikipedia_page_coords not available.",1);
         }
@@ -423,9 +428,10 @@ window.wposm = (function () {
         link = "https://osm.wikidata.link/search?q="+wikidata;
         attachdiv.appendChild(am.ahref("mylinkOSMWIKIDATA"," (connect:"+wikidata+")","Use osm.wikidata.link to make connection from WD to OSM.",link));
         var myspan = document.createElement('span');
-        var mytext = document.createTextNode(" ... Retrieving additional matches from osm.wikipedia.link (please be patient) ... ");
+	am.addHTML(myspan,"<i style=\"background-color: yellow;\"> ... Retrieving additional matches from osm.wikipedia.link (please be patient) ... </i>");
+        //var mytext = document.createTextNode(" ... Retrieving additional matches from osm.wikipedia.link (please be patient) ... ");
         myspan.id = "temporary";
-        myspan.appendChild(mytext);
+        //myspan.appendChild(mytext);
         attachdiv.appendChild(myspan);
         am.addText(attachdiv,"",1);
         try {
@@ -685,6 +691,7 @@ window.wposm = (function () {
         a.id = id;
         a.title = title;
         a.href = href;
+	a.target = "_new";
 	if (style) {
 	    a.style = style;
 	}
