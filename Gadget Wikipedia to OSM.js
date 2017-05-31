@@ -46,46 +46,59 @@ window.wposm = (function () {
     };
 
     am.configureMenu = function() {
-          // Set up switch
-        var attachhere = document.getElementById('p-tb');
+	var attachhere;
         var attachdiv;
         var attachinmenu;
-        if (!attachhere) {
+	// Set up main area
+        attachhere = document.getElementById('siteNotice');
+        attachdiv = document.createElement("div");
+        attachdiv.setAttribute('style', 'border: solid 1px blue; padding: 5px; text-align: left;');
+        attachdiv.id = "WikipediaOSM3005";
+        if (am.getb('active')) {
+            attachhere.appendChild(attachdiv);
+            var basics = document.createElement("div");
+	    basics.id = "WikipediaOSM3005_basics";
+            attachdiv.appendChild(basics);	   
+	    var results = document.createElement("div");
+	    results.id = "WikipediaOSM3005_results_element";
+	    results.setAttribute('style', 'border: solid 1px green; padding: 5px; text-align: left; display: none;');
+            attachdiv.appendChild(results);	   
+	    var mapframe = document.createElement("iframe");
+	    mapframe.id = "WikipediaOSM3005_map_element";
+	    mapframe.style = "display: none";
+	    mapframe.width = document.getElementById("WikipediaOSM3005").offsetWidth-15; // should read the width of the inner div really...
+	    mapframe.height = 400;
+	    attachdiv.appendChild(mapframe);
+	};
+        // Set up switch - try to attach to menu
+        var attachheremenu = document.getElementById('p-tb');
+        if (!attachheremenu) {
+            if (!am.getb('active')) {
+		attachhere.appendChild(attachdiv);
+	    };
             attachinmenu = false;
-            attachhere = document.getElementById('siteNotice');
-            attachdiv = document.createElement("div");
-            attachdiv.setAttribute('style', 'border: solid 1px blue; padding: 5px; text-align: left;');
+	    attachdiv = document.createElement("div");
         } else {
             attachinmenu = true;
-            var ul = attachhere.getElementsByTagName('ul')[0];
+            var ul = attachheremenu.getElementsByTagName('ul')[0];
             attachhere = ul;
             attachdiv = document.createElement("li");
         }
-        attachdiv.id = "WikipediaOSM3005";
-        // var span = document.createElement("span");
-        // span.innerHTML = "<input type=\"checkbox\" value=\"1\" onclick=\"storageput('active', this.checked)\"/>";
+        attachdiv.id = "WikipediaOSM3005_menu";
         var input = document.createElement("input");
         input.type = "checkbox";
         input.id = "checkbox";
         input.checked = am.getb('active');
         input.onclick = function() { console.log(this.checked); am.put('active', this.checked); location.reload();} ;
         attachdiv.appendChild(input);
-        //attachdiv.appendChild(document.createTextNode("OSMgadget: active. Uncheck box to deactivate on other pages."));
-        //attachdiv.appendChild(document.createTextNode("OSMgadget: inactive. Check box and reload to activate."));
-        // attachdiv.appendChild(document.createTextNode("OSMgadget"));
-        attachdiv.appendChild(am.ahref("reportIssue","OSMgadget","Check/uncheck button to enable/disable. (Reloads page.) Click link for help.","https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget"));
+        attachdiv.appendChild(am.ahref("WikipediaOSM3005_menu_onoff","OSMgadget","Check/uncheck button to enable/disable. (Reloads page.) Click link for help.","https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget"));
         attachhere.appendChild(attachdiv);
     };
 
     am.addBasics = function () {
         // Fetch page title
-        var attachhere = document.getElementById('siteNotice');
-        var attachdiv = document.createElement("div");
-        attachdiv.setAttribute('style', 'border: solid 1px blue; padding: 5px; text-align: left;');
-        am.addText(attachdiv,"Wikipedia->OSM: Overpass");
-        attachdiv.id = "attachdiv";
-        attachhere.appendChild(attachdiv);
-        attachdiv = document.getElementById('attachdiv');
+        var attachdiv = document.getElementById('WikipediaOSM3005_basics');
+        am.addText(attachdiv,"Wikipedia-OSM: ");
         var title = document.getElementById('firstHeading').innerHTML;
         var wp = title;
         title = encodeURI(title);
@@ -93,26 +106,27 @@ window.wposm = (function () {
         lang = lang.replace(/\..*/,"").replace(/.*\//,"");
         var coordspan = document.getElementById('coordinates');
         wp = lang+":"+wp;
-        // Search by title
-        // link = "https://osm.wikidata.link/search?q="+title;
-        // attachdiv.appendChild(am.ahref("mylinkOSMWIKIDATA"," (osm.wikidata.link)","Search on osm.wikidata.link",link));
-        // link = "http://overpass-turbo.eu/map.html?Q="+overpassquery + outskel ;
-        // Obtain wikidata
         var wd;
         try {
             // Fetch wikidata
             wd = document.getElementById('t-wikibase').getElementsByTagName("a")[0].href;
             wd = wd.replace(/.*\//,"");
-            am.addText(attachdiv,"; "+wd);
+            am.addText(attachdiv,""+wd);
         } catch(err) {
-            am.addText(attachdiv,"; no wikidata!");
+            am.addText(attachdiv,"No wikidata!");
         }
+	var querystart = encodeURIComponent("[out:json][timeout:25];");
+	var outrel = encodeURIComponent('relation["wikipedia"="'+wp+'"]; relation["wikidata"="'+wd+'"]; out bb;');
         var overpassquery = encodeURIComponent(
-            "[out:json][timeout:25];"+
             '(node["wikipedia"="'+wp+'"];way["wikipedia"="'+wp+'"];relation["wikipedia"="'+wp+'"];'+
             'node["wikidata"="'+wd+'"]; way["wikidata"="'+wd+'"]; relation["wikidata"="'+wd+'"];'+
-            "); out meta; ");
-        var outskel = encodeURIComponent(" >; out skel qt; "+"{{style: node, way, relation { text: name; }\nnode {color: blue;}\nway { color: green;}\nrelation {color:pink; fill-opacity: 0;} }}");
+            "); out meta qt; ");
+        var outskel = encodeURIComponent(" >; out meta qt; "+
+					 "{{style:\nnode {color: blue;}\nway { color: green;}\nrelation {color:pink; fill-opacity: 0;} }}");
+//					 "{{style: node, way, relation { text: name; }\nnode {color: blue;}\nway { color: green;}\nrelation {color:pink; fill-opacity: 0;} }}");
+	var overpassmap = querystart + outrel + overpassquery + outskel;
+	overpassmap = querystart + outrel + overpassquery + outskel;
+	overpassquery = querystart + overpassquery;
         var coord = [0,0];
         var coord_ = [0,0];
         var coord2 = "";
@@ -126,7 +140,6 @@ window.wposm = (function () {
                 coord2 = coord2.replace(/<\/span>/,",").replace(/<.*?>/g,"").replace(/ /g,"").replace(/\;/g,",");
                 coord2 = coord2.replace(/,+/,",");
                 coord = coord2.split(",");
-                // am.addText(attachdiv," (coord-method-1a-ok)"+coord);
                 console.log("(coord-method-1a-ok)");
             } else if (document.getElementsByClassName("geo-default") && document.getElementsByClassName("geo-default").length>0) {
                 var span = document.getElementsByClassName("geo-default")[0];
@@ -134,19 +147,15 @@ window.wposm = (function () {
                 coord2 = coord2.replace(/<\/span>/,",").replace(/<.*?>/g,"").replace(/ /g,"").replace(/\;/g,",");
                 coord2 = coord2.replace(/,+/,",");
                 coord = coord2.split(",");
-                // am.addText(attachdiv," (coord-method-1b-ok)"+coord);
                 console.log("(coord-method-1b-ok)");
             } else if (document.getElementsByClassName("geo-nondefault") && document.getElementsByClassName("geo-nondefault").length > 0) {
                 var span2 = document.getElementsByClassName("geo-nondefault")[0];
                 coord2 =span2.innerHTML;
-                // console.log(coord2);
                 coord2 = coord2.replace(/<\/span>/,",").replace(/<.*?>/g,"").replace(/ /g,"").replace(/\;/g,",");
                 coord2 = coord2.replace(/,+/,",");
                 coord = coord2.split(",");
-                // am.addText(attachdiv," (coord-method-1c-ok)"+coord2);
                 console.log("(coord-method-1c-ok)");
             } else {
-                // am.addText(attachdiv," (coord-method-1-fail)");
                 console.log("(coord-method-1-fail)");
                 coord = "";
                 coord2 = "";
@@ -169,11 +178,9 @@ window.wposm = (function () {
                     }
                 }
                 if (lk === "") {
-                    // am.addText(attachdiv," (coord-method-2b-fail)");
                     console.log("(coord-method-2b-fail)");
                 } else {
                     coord3 = encodeURI(lk.replace(/.*params=/,"").replace(/\&.*/,""));
-                    // am.addText(attachdiv," (coord-method-2a-ok)"+coord);
                     console.log("(coord-method-2a-ok)");
                 }
             } else {
@@ -186,11 +193,9 @@ window.wposm = (function () {
                     }
                 }
                 if (lk === "") {
-                    // am.addText(attachdiv," (coord-method-2b-fail)");
                     console.log("(coord-method-2b-fail)");
                 } else {
                     coord3 = encodeURI(lk.replace(/.*params=/,"").replace(/\&.*/,""));
-                    // am.addText(attachdiv," (coord-method-2b-ok)"+coord3);
                     console.log("(coord-method-2b-ok)");
                 }
             }
@@ -205,20 +210,28 @@ window.wposm = (function () {
             am.addText(attachdiv," (coords!)");
         }
 	if (coord2 !== "" && coord3 !== "") {
-//	    am.addText(attachdiv,", dual coord: "+coord3);
+//	    am.addText(attachdiv,", dual coord: "+coord3,1);
 	    if (coord[0] != coord_[0]) {
-            am.addText(attachdiv,"(mismatch X: "+coord[0]+" " + coord_[0] + ")");
+		am.addHTML(attachdiv," <b style=\"background-color: pink;\">(mismatch/WP lat: "+am.distance(parseFloat(coord[0]),parseFloat(coord[1]),parseFloat(coord_[0]),parseFloat(coord_[1])) + "m)</b>");
 	    }
 	    if (coord[1] != coord_[1]) {
-            am.addText(attachdiv,"(mismatch Y: "+coord[1]+" " + coord_[1] + ")");
+		am.addHTML(attachdiv," <b style=\"background-color: pink;\">(mismatch/WP lon: "+am.distance(parseFloat(coord[0]),parseFloat(coord[1]),parseFloat(coord_[0]),parseFloat(coord_[1])) + "m)</b>");
         }
-//	    am.addText(attachdiv,"; ");
 	}
 	if (coord2 === "" && coord3 !== "") {
 	    coord = coord_;
 	}
         try {
             // Create links
+	    //	    var mystyle = "border: 1px solid blue; border-bottom: 1px solid white; margin-left: 3px; padding-left: 3px;padding-right: 3px;";
+	    var mystyle = "border: 1px solid purple; background: lightgrey; margin-left: 3px; padding-left: 3px;padding-right: 3px;";
+            attachdiv.appendChild(am.ahref("WikipediaOSM3005_results","No results","Show/hide results (if any). Setting is remembered.","javascript:",0,mystyle));
+	    attachdiv.appendChild(am.ahref("WikipediaOSM3005_map","No map","Show/hide map (if available). Setting is remembered.","javascript:",0,mystyle));
+	    am.toggle("WikipediaOSM3005_results","results",true);
+	    var op_results_control = document.getElementById("WikipediaOSM3005_results");
+	    op_results_control.innerHTML = "show results";
+	    op_results_control.onclick = function() { am.toggle(this.id,"results"); return false; };
+	    am.toggle("WikipediaOSM3005_map","map",true);
 // OpenStreetMap.org - area
             OSMExtension = "?zoom=18&mlat="+coord[0]+"&mlon="+coord[1];
             link = "http://www.openstreetmap.org/"+OSMExtension;
@@ -232,9 +245,9 @@ window.wposm = (function () {
             link = "http://127.0.0.1:8111/add_node?lat="+coord[0]+"&lon="+coord[1]+"&addtags="+encodeURIComponent("name="+encodeURIComponent(title)+encodeURI("|source=wikipedia|wikidata="+wd+"|wikipedia=")+lang+":"+encodeURIComponent(title));
             attachdiv.appendChild(am.ahref("mylinkidJOSM"," (JOSM)","Add node with JOSM",link,1));
 // Overpass-turbo - map
-            link = "http://overpass-turbo.eu/map.html?Q="+overpassquery+outskel;
+            link = "https://overpass-turbo.eu/map.html?Q="+overpassmap;
             attachdiv.appendChild(am.ahref("mylinkidMAP"," (overpass-map)","View overpass interactive map for wikidata:"+wd,link));
-// Overpass-api - data
+	    // Overpass-api - data
             link = "http://overpass-api.de/api/interpreter?data="+overpassquery;
             attachdiv.appendChild(am.ahref("mylinkidJSON"," (overpass-json)","View overpass json data for wikidata:"+wd,link));
             // link = "http://localhost:50808/hello?title="+lang+":"+title+"&coord="+coord2+"&geohack="+coord3+"&wikidata="+wd;
@@ -243,6 +256,7 @@ window.wposm = (function () {
             attachdiv.appendChild(am.ahref("reportIssue"," (HELP)","Report an issue and make suggestions for this Gadget.","https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget"));
         } catch(err) {
             am.addText(attachdiv," (error: No links!)");
+	    console.log(err);
         }
         link = "https://overpass-api.de/api/interpreter?data="+overpassquery;
         var hascoords = 1;
@@ -253,12 +267,16 @@ window.wposm = (function () {
     };
 
     am.getOSMData = function (obj) {
-        var myspan = document.createElement('span');
+        var attachdiv = document.getElementById('WikipediaOSM3005_results_element');
+	if (!attachdiv) {
+	    console.log("attachiv undefined");
+	}
+	am.addHTML(attachdiv,"<b>Overpass:</b> ");
+	var myspan = document.createElement('span');
         var mytext = document.createTextNode(" ... Fetching data from overpass (should only take a sec) ... ");
         myspan.id = "temporary";
         myspan.appendChild(mytext);
         attachdiv.appendChild(myspan);
-        am.addText(attachdiv,"",1);
         var link = "";
         if (obj.hascoords==1) {
             am.addText(attachdiv,"Wikipedia_page_coords=(");
@@ -282,11 +300,13 @@ window.wposm = (function () {
                     if (op) {
                         myspan.innerHTML = '';
                         var ol = document.createElement("ol");
+			if (op.elements.length>0) {
+			    //  results have come in, so map can be launched.
+			    am.launchmap();
+			}
                         for (var j = 0; j < op.elements.length; j++){
                             var li = document.createElement("li");
-//                            am.addText(li,"",1);
                             var matchno = j+1;
-//                            am.addText(li," ["+matchno+"]");
                             var id = op.elements[j].id;
                             var type = op.elements[j].type;
 			    li.id = type + id;
@@ -300,24 +320,18 @@ window.wposm = (function () {
                             }
                             link = "http://www.openstreetmap.org/"+type+"/"+id;
                             var linkID = "http://www.openstreetmap.org/edit?"+type+"="+id;
-                            // At least for the first link, rather than appending, we could replace the earlier link.
+                            // For the first result, amend the earlier links:
                             if (j===0) {
                                 document.getElementById('mylinkidOSM').href = link + obj.OSMExtension;
                                 // document.getElementById('mylinkidOSM').text = " (OSM/"+type+id+")";
                                 document.getElementById('mylinkidOSM').text = " (OSM+)";
+				document.getElementById('mylinkidOSM').target = "_new";
                                 document.getElementById('mylinkidOSM').title = "View object on OSM.org.";
                                 document.getElementById('mylinkidID').href = linkID;
                                 document.getElementById('mylinkidID').text = " (iD+)";
+				document.getElementById('mylinkidID').target = "_new";
                                 document.getElementById('mylinkidID').title = "Edit object with iD.";
-				/*
-                                if (op.elements.length === 1) {
-                                    am.addText(li," "+haswp+haswd+". ");
-                                } else {
-                                    li.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+matchno+" on OSM",link));
-                                } */
-                            } /* else {
-                                li.appendChild(am.ahref("mylinkidOSMx"," "+haswp+haswd+","+type+"/"+id,"View object "+matchno+" on OSM",link));
-                            } */
+                            } 
                             am.addText(li," "+haswp+haswd+". ");
                             var factor = 0.005;
                             var left = parseFloat(obj.coord[1]) - factor;
@@ -331,13 +345,8 @@ window.wposm = (function () {
                             if (j===0) {
                                 document.getElementById('mylinkidJOSM').href = link ;
                                 document.getElementById('mylinkidJOSM').text = " (JOSM+)" ;
+				document.getElementById('mylinkidJOSM').target = "_new";
                                 document.getElementById('mylinkidJOSM').title = "Load object with JSON." ;
-                                /* if (op.elements.length > 1) {
-                                    li.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object "+j+" with JOSM (same layer)",link));
-                                }
-                            } else {
-                                li.appendChild(am.ahref("mylinkidJOSMx"," (JOSM) ","Load object "+j+" with JOSM (same layer)",link));
-				            */
                             }
                             li.appendChild(am.formatosm(op.elements[j],{"compare": obj.hascoords, "wikidata": obj.wikidata,
 									"lat":obj.coord[0],"lon":obj.coord[1]}));
@@ -347,13 +356,8 @@ window.wposm = (function () {
                         if (op.elements.length === 0) {
                             am.addText(attachdiv,"No OSM object! Check data for osm.wikidata.link below for potential matches. ",1);
                             // Remove the above elements, as they won't work:
-                            //document.getElementById("mylinkidJSON").outerHTML = "";
-                            //document.getElementById("mylinkidMAP").outerHTML = "";
                             document.getElementById("mylinkidJSON").outerHTML = " (overpass-JSON)";
                             document.getElementById("mylinkidMAP").outerHTML = " (overpass-map)";
-                            // Better strategy would be to just remove the links, so the line doesn't shift about.
-                            //document.getElementById('mylinkidJSON').href = link ;
-                            //document.getElementById('mylinkidMAP').href = link ;
                         } else {
                             if (obj.hascoords === 0) {
                                 am.addText(attachdiv,"",1);
@@ -381,17 +385,37 @@ window.wposm = (function () {
         return 1;
     };
 
+
+    am.launchmap = function() {
+	try {
+	    // Load map if element is visible:	
+	    if (document.getElementById("WikipediaOSM3005_map_element").style.display == "block") {
+		var mapframe = document.getElementById("WikipediaOSM3005_map_element");
+		if (!mapframe.src || mapframe.src === '') {
+		    mapframe.src = document.getElementById("mylinkidMAP").href;
+		};
+	    }
+	    // Enable map control:
+	    var op_map_control = document.getElementById("WikipediaOSM3005_map");
+	    op_map_control.onclick = function() {
+		var mapframe = document.getElementById("WikipediaOSM3005_map_element");
+		if (!mapframe.src || mapframe.src === '') {
+		    mapframe.src = document.getElementById("mylinkidMAP").href;
+		};
+		am.toggle(this.id,"map"); return false;
+	    };
+	} catch (err) {
+	    console.log("Error restoring map: "+err);
+	}
+    };
+    
     am.getLinkData = function (obj) {
 	var wikidata = obj.wikidata;
         var apiurl = "https://osm.wikidata.link/api/1/item/"+wikidata;
-        var attachhere = document.getElementById('siteNotice');
-        var attachdiv = document.createElement("div");
-        attachdiv.setAttribute('style', 'border: solid 1px blue; padding: 5px; text-align: left;');
-        // am.addText(attachdiv,"osm.wikipedia.link: ");
+	var attachdiv = document.getElementById('WikipediaOSM3005_results_element');
+	am.addHTML(attachdiv,"<b>Matcher:</b> ");
         attachdiv.appendChild(am.ahref("osmwplinksite","osm.wikidata.link","Go to osm.wikidata.link","https://osm.wikidata.link"));
         attachdiv.appendChild(am.ahref("osmwplinkAPI"," (query) ","API url: "+apiurl,apiurl));
-        attachdiv.id = "attachdiv2";
-        attachhere.appendChild(attachdiv);
         // Search by title
         var title = document.getElementById('firstHeading').innerHTML;
         var link = "https://osm.wikidata.link/search?q="+title;
@@ -411,10 +435,8 @@ window.wposm = (function () {
             dataType: "text",
             success: function(responseText) {
                             try {
-//                    console.log(responseText);
                     var op = JSON.parse(responseText);
                     if (op) {
-                        // mytext = document.getElementById('temporary');
                         myspan.innerHTML = '';
                         var wdlat = 0;
                         var wdlon = 0;
@@ -434,7 +456,7 @@ window.wposm = (function () {
 				var maxd = 300;
 				if (distance>maxd) {
 				    am.addHTML(attachdiv,", <b style=\"background-color: pink;\">DISTANCE > "+maxd+"m</b>"+
-					       " (Please/check amend wikipedia/wikidata coordinates.)");
+					       " (Please check/amend wikipedia/wikidata coordinates.)");
 				}
 			    }
 			    am.addText(attachdiv,"",1);
@@ -466,13 +488,11 @@ window.wposm = (function () {
                                     li = document.createElement("li");				   
 				    li.id = op.osm[j].type + op.osm[j].id;
 				    am.addHTML(li,"<b>Matcher result (new):</b> ");
-//				    console.log("Entry ! exists.");
+//				    console.log("Entry does not exist.");
 				};
-                                // am.addText(li,"#"+(j+1)+": ");
                                 li.appendChild(am.formatosm(op.osm[j],{"compare":wdhasll,"lat":wdlat,"lon":wdlon,"wikidata":wikidata}));
 				if (!duplicate) 
                                     ol.appendChild(li);
-                                // am.addText(attachdiv,"; ",1);
                                 if (op.osm[j].existing) {
                                     existing++;
                                 } else {
@@ -512,7 +532,10 @@ window.wposm = (function () {
                                     am.addText(attachdiv,"RECOMMENDATION: add the coordinates to the wikidata item.");
                                 }
                             } else {
-                                am.addText(attachdiv,"The query returned no results, with message: "+op.response+". ",1);
+				if (op.response == 'ok') 
+                                    am.addText(attachdiv,"The query did not find any results (no errors). ",1);
+				else
+				    am.addText(attachdiv,"The query returned no results, with message: "+op.response+". ",1);
 				am.addText(attachdiv,"QSM query parameters: "+JSON.stringify(op.search).replace(/","/g,'", "'));
                             }
                         }
@@ -637,7 +660,6 @@ window.wposm = (function () {
 	}
          element.appendChild(document.createElement('br'));
         text = JSON.stringify(osm.tags);
-//        text = text.replace("/\"\,\"/g","\", \"");
         text = text.replace(/","/g,'", "');
         textelement = document.createTextNode(text);
         element.appendChild(textelement);
@@ -657,12 +679,15 @@ window.wposm = (function () {
         obj.appendChild(myspan);
     };
     
-    am.ahref = function (id, text, title, href, onclick) {
+    am.ahref = function (id, text, title, href, onclick, style) {
         var a = document.createElement("a");
         a.appendChild(document.createTextNode(text));
         a.id = id;
         a.title = title;
         a.href = href;
+	if (style) {
+	    a.style = style;
+	}
         if (onclick) {
             if (onclick==1) {
                 /*
@@ -730,6 +755,33 @@ function(){ opencloseWin(href); return false;}
         return (  (x == "false")  ?  false  :  true  );
     };
 
+    am.toggle = function (id,text,restore) {
+	var el = id+"_element";
+	var element = document.getElementById(el);
+	var controller = document.getElementById(id);
+	var state = element.style.display;
+	if (restore==true) {
+	    state = am.get(el);
+	    if (state == "block") {
+		element.style.display = "block";
+		controller.innerHTML = "hide "+text;
+	    } else {
+		element.style.display = "none";
+		controller.innerHTML = "show "+text;
+	    }
+	} else {
+	    if (state == "block") {
+		element.style.display = "none";
+		controller.innerHTML = "show "+text;
+	    } else {
+		element.style.display = "block";
+		controller.innerHTML = "hide "+text;
+	    }
+	}
+	am.put(el,element.style.display);
+	return false;
+    };
+    
 	return wposmObj;
 }());
 $(wposm.init);
