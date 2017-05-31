@@ -225,9 +225,14 @@ window.wposm = (function () {
         try {
             // Create links
 	    //	    var mystyle = "border: 1px solid blue; border-bottom: 1px solid white; margin-left: 3px; padding-left: 3px;padding-right: 3px;";
-	    var mystyle = "border: 1px solid purple; background: lightgrey; margin-left: 3px; padding-left: 3px;padding-right: 3px;";
-            attachdiv.appendChild(am.ahref("WikipediaOSM3005_results","No results","Show/hide results (if any). Setting is remembered.","javascript:",0,mystyle));
-	    attachdiv.appendChild(am.ahref("WikipediaOSM3005_map","No map","Show/hide map (if available). Setting is remembered.","javascript:",0,mystyle));
+	    // The [,] are a workaround for iOS.
+	    am.addText(attachdiv," [",0,"display: none;");
+	    var mystyle = "border: 1px solid purple; background-color: lightgrey; margin-left: 3px; padding-left: 3px; padding-right: 3px;";
+//	    var mystyle = "background-color: #000;";
+            attachdiv.appendChild(am.ahref("WikipediaOSM3005_results"," No results ","Show/hide results (if any). Setting is remembered.","javascript:",0,mystyle));
+	    am.addText(attachdiv,"] [",0,"display: none;");
+	    attachdiv.appendChild(am.ahref("WikipediaOSM3005_map"," No map ","Show/hide map (if available). Setting is remembered.","javascript:",0,mystyle));
+	    am.addText(attachdiv,"] ",0,"display: none;");
 	    am.toggle("WikipediaOSM3005_results","results",true);
 	    var op_results_control = document.getElementById("WikipediaOSM3005_results");
 	    op_results_control.innerHTML = "show results";
@@ -249,7 +254,9 @@ window.wposm = (function () {
             link = "https://overpass-turbo.eu/map.html?Q="+overpassmap;
             attachdiv.appendChild(am.ahref("mylinkidMAP"," (overpass-map)","View overpass interactive map for wikidata:"+wd,link));
 	    // Overpass-api - data
-            link = "http://overpass-api.de/api/interpreter?data="+overpassquery;
+	    var overpassapi = "https://overpass-api.de/api";
+//	    overpassapi = "http://overpass.osm.rambler.ru/cgi";
+            link = overpassapi + "/interpreter?data="+overpassquery;
             attachdiv.appendChild(am.ahref("mylinkidJSON"," (overpass-json)","View overpass json data for wikidata:"+wd,link));
             // link = "http://localhost:50808/hello?title="+lang+":"+title+"&coord="+coord2+"&geohack="+coord3+"&wikidata="+wd;
             // attachdiv.appendChild(am.ahref("mylinkid"," (local)","You need a local server for this.",link));
@@ -259,7 +266,8 @@ window.wposm = (function () {
             am.addText(attachdiv," (error: No links!)");
 	    console.log(err);
         }
-        link = "https://overpass-api.de/api/interpreter?data="+overpassquery;
+	// overpassapi = "https://overpass.osm.rambler.ru/cgi";
+        link = overpassapi + "/interpreter?data="+overpassquery;
         var hascoords = 1;
         if (coord2 === '' && coord3 === '') {
             hascoords = 0;
@@ -672,8 +680,14 @@ window.wposm = (function () {
         return element;
     };
 
-    am.addText = function(obj,text,br) {
-        obj.appendChild(document.createTextNode(text));
+    am.addText = function(obj,text,br,style) {
+	var mine = document.createTextNode(text);
+	var span = document.createElement('span');
+        span.appendChild(mine);
+	if (style) {
+	    span.style = style;
+	}
+        obj.appendChild(span);
         if (br == 1) {
             obj.appendChild(document.createElement('br'));
         }
@@ -693,7 +707,9 @@ window.wposm = (function () {
         a.href = href;
 	a.target = "_new";
 	if (style) {
+	    // doesn't work on iOS....
 	    a.style = style;
+	    // but solution below doesn't work either.
 	}
         if (onclick) {
             if (onclick==1) {
@@ -709,7 +725,19 @@ window.wposm = (function () {
                 a.href = "javascript:(function() {  var myWindow = window.open(\""+href+"\", \"_new\"); setTimeout(function() { myWindow.close(); }, 1000); return false; }());";
             }
         }
-        return a;
+	/*
+	var obj = "";
+	if (style) {
+	    var span = document.createElement('div');
+	    span.style = style + " display: inline;";
+	    span.appendChild(a);
+	    obj = span;
+	} else {
+	    obj = a;
+	}
+        return obj;
+	*/
+	return a;
     };
 /*
 function(){ opencloseWin(href); return false;}
