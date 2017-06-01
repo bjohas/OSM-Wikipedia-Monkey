@@ -3,7 +3,19 @@
 // * To learn more about this script, visit https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget
 window.wposm = (function () {
     var wposmObj = {
-        props: {},
+        props: { addBasicsResult: "",
+		 results: 0,
+		 wikipedia_coord: [0,0],
+		 wikidata_coord: [0,0],
+		 has_wikipedia_coords: false,
+		 has_wikidata_coords: false,
+		 wikidata: "",
+		 data_op: "",
+		 data_owl: "",
+		 data_op_2: "",
+		 search3_radius: 5000,
+		 search3_category: ["[historic]"]
+	       },
         methods: {}
     },
         //internal shortcuts
@@ -20,30 +32,31 @@ window.wposm = (function () {
            ) {
             return; //Don't run the script under any of these conditions.
         }
-                /*
-        var counter = 0;
-        if (am.get("counter")) {
-            counter = parseInt(am.get("counter"));
-            counter++;
-        }
-        am.put("counter",counter);
-        console.log(counter); */
-        am.configureMenu();
+                am.configureMenu();
         if (am.getb('active')) {
             ap.addBasicsResult = am.addBasics(); //checks for types visible from article page
             if (ap.addBasicsResult) {
+		// ap.addBasicsResult = {"link": link, "OSMExtension": OSMExtension, "coord":coord, "hascoords":hascoords, "wikidata" : wd,"coordissues":coordissues};
                 console.log("getOSMData");
                 am.getOSMData(ap.addBasicsResult);
-		/* // Moved this down - only make ths request when the OSM request is done, otherwise issue with results ordering.
-                if (ap.addBasicsResult.wikidata) {
-                    console.log("osm.wikipedia.link");
-                    am.getLinkData(ap.addBasicsResult);
-                }
-		*/
             }
         } else {
         }
     };
+
+    // Unfinished:
+    // control is returned here after each asyncQuery to execute the next stage (if needed)
+    am.flowControl = function() {
+	ap.flowControl++;
+	switch (am.flowControl) {
+	case 1:
+	    break;
+	case 2:
+	    break;
+	case 3:
+	    break;
+	}
+    }
 
     am.configureMenu = function() {
 	var attachhere;
@@ -137,10 +150,13 @@ window.wposm = (function () {
             // Fetch coordinates
             if (document.getElementsByClassName("geo") && document.getElementsByClassName("geo")[0]) {
                 coord2 = document.getElementsByClassName("geo")[0].innerHTML;
+                console.log("(coord-method-1a-ok: "+coord2+")");
+		coord2 = coord2.replace(/<span class=\"elevation.*/,"");
                 coord2 = coord2.replace(/<\/span>/,",").replace(/<.*?>/g,"").replace(/ /g,"").replace(/\;/g,",");
+                console.log("(coord-method-1a-ok: "+coord2+")");
                 coord2 = coord2.replace(/,+/,",");
                 coord = coord2.split(",");
-                console.log("(coord-method-1a-ok)");
+                console.log("(coord-method-1a-ok: "+coord2+")");
             } else if (document.getElementsByClassName("geo-default") && document.getElementsByClassName("geo-default").length>0) {
                 var span = document.getElementsByClassName("geo-default")[0];
                 coord2 =span.innerHTML;
@@ -181,7 +197,7 @@ window.wposm = (function () {
                     console.log("(coord-method-2b-fail)");
                 } else {
                     coord3 = encodeURI(lk.replace(/.*params=/,"").replace(/\&.*/,""));
-                    console.log("(coord-method-2a-ok)");
+                    console.log("(coord-method-2a-ok:"+coord3+")");
                 }
             } else {
                 lks = document.getElementsByTagName("a");
@@ -224,11 +240,9 @@ window.wposm = (function () {
 	}
         try {
             // Create links
-	    //	    var mystyle = "border: 1px solid blue; border-bottom: 1px solid white; margin-left: 3px; padding-left: 3px;padding-right: 3px;";
 	    // The [,] are a workaround for iOS.
 	    am.addText(attachdiv," [",0,"display: none;");
 	    var mystyle = "border: 1px solid purple; background-color: lightgrey; margin-left: 3px; padding-left: 3px; padding-right: 3px;";
-//	    var mystyle = "background-color: #000;";
             attachdiv.appendChild(am.ahref("WikipediaOSM3005_results"," No results ","Show/hide results (if any). Setting is remembered.","javascript:",0,mystyle));
 	    am.addText(attachdiv,"] [",0,"display: none;");
 	    attachdiv.appendChild(am.ahref("WikipediaOSM3005_map"," No map ","Show/hide map (if available). Setting is remembered.","javascript:",0,mystyle));
@@ -249,7 +263,7 @@ window.wposm = (function () {
             attachdiv.appendChild(am.ahref("mylinkidID"," (iD)","Edit area with iD",link));
 // JOSM - add node
             link = "http://127.0.0.1:8111/add_node?lat="+coord[0]+"&lon="+coord[1]+"&addtags="+encodeURIComponent("name="+encodeURIComponent(title)+encodeURI("|source=wikidata,wikipedia|wikidata="+wd+"|wikipedia=")+lang+":"+encodeURIComponent(title));
-            attachdiv.appendChild(am.ahref("mylinkidJOSM"," (JOSM)","Add node with JOSM",link,1));
+            attachdiv.appendChild(am.ahref("mylinkidJOSM"," (JOSM+node+tags)","Add node with JOSM",link,1));
 // Overpass-turbo - map
             link = "https://overpass-turbo.eu/map.html?Q="+overpassmap;
             attachdiv.appendChild(am.ahref("mylinkidMAP"," (overpass-map)","View overpass interactive map for wikidata:"+wd,link));
@@ -268,13 +282,17 @@ window.wposm = (function () {
         }
 	// Won't work on wikipedia as it doesn't serve over https...
 	//	overpassapi = "http://overpass.osm.rambler.ru/cgi";
-	overpassapi = "https://api.openstreetmap.fr/oapi";
+	var overpassapi = "https://api.openstreetmap.fr/oapi";
         link = overpassapi + "/interpreter?data="+overpassquery;
 //	console.log(link);
         var hascoords = 1;
+	ap.has_wikipedia_coords = true;
         if (coord2 === '' && coord3 === '') {
             hascoords = 0;
+	    ap.has_wikipedia_coords = false;
         }
+	ap.wikipedia_coord = coord;
+	ap.wikidata = wd;
         return {"link": link, "OSMExtension": OSMExtension, "coord":coord, "hascoords":hascoords, "wikidata" : wd,"coordissues":coordissues};
     };
 
@@ -285,10 +303,8 @@ window.wposm = (function () {
 	}
 	am.addHTML(attachdiv,"<b>Overpass:</b> ");
 	var myspan = document.createElement('span');
-        //var mytext = document.createTextNode(" ... Fetching data from overpass (should only take a sec) ... ");
         myspan.id = "temporary";
 	am.addHTML(myspan,"<i style=\"background-color: yellow;\"> ... Fetching data from overpass (should only take a sec) ... </i>");
-        //myspan.appendChild(mytext);
         attachdiv.appendChild(myspan);
         var link = "";
         if (obj.hascoords==1) {
@@ -309,98 +325,48 @@ window.wposm = (function () {
             async: true,
             dataType: "text",
             success: function(responseText) {
-                            try {
-                    // console.log(responseText);
-                    // alert(response.responseText);
-                    var op = JSON.parse(responseText);
-                    if (op) {
-                        myspan.innerHTML = '';
-                        var ol = document.createElement("ol");
-			if (op.elements.length>0) {
-			    //  results have come in, so map can be launched.
-			    am.launchmap();
+            		    myspan.innerHTML = '';
+		    var op = undefined;
+		    try {
+			op = JSON.parse(responseText);
+			ap.data_op = op;
+		    } catch(err) {
+			console.log("getOSM error in parse: "+err);
+		    }
+		    if (op) {			
+			try {
+			    am.parseResponse(attachdiv,obj,op.elements);
+			    if (op.elements.length === 0) {
+				am.addText(attachdiv,"No OSM object! Check data for osm.wikidata.link below for potential matches. ",1);
+				// Remove the above elements, as they won't work:
+				// document.getElementById("mylinkidJSON").outerHTML = " (overpass-JSON)";
+				document.getElementById("mylinkidMAP").outerHTML = " (overpass-map)";
+			    } else {
+				if (obj.hascoords === 0) {
+				    am.addText(attachdiv,"",1);
+				    am.addText(attachdiv,"The wikipedia/wikidata entry has no coordinates, but is linked to an OSM object. Please do not copy coordinates from OSM to wikipedia/wikidata.",1);                        
+				}
+			    }
+			} catch(err) {
+			    console.log("getOSM data error xmlhttp: "+err);
+			    am.addText(attachdiv," Sorry, the overpass request has failed. If you've loaded a lot of pages, you may be over quota - try reloading this page.");
+			    attachdiv.appendChild(am.ahref("checkStatus"," You can check your API status here","Check overpass API status.","http://overpass-api.de/api/status"));
+			    am.addText(attachdiv,"",1);
 			}
-                        for (var j = 0; j < op.elements.length; j++){
-                            var li = document.createElement("li");
-                            var matchno = j+1;
-                            var id = op.elements[j].id;
-                            var type = op.elements[j].type;
-			    li.id = type + id;
-                            var haswp = "";
-                            if (op.elements[j].tags.wikipedia) {
-                                haswp = "WP";
-                            }
-                            var haswd ="";
-                            if (op.elements[j].tags.wikidata) {
-                                haswd = "WD";
-                            }
-                            link = "http://www.openstreetmap.org/"+type+"/"+id;
-                            var linkID = "http://www.openstreetmap.org/edit?"+type+"="+id;
-                            // For the first result, amend the earlier links:
-                            if (j===0) {
-                                document.getElementById('mylinkidOSM').href = link + obj.OSMExtension;
-                                // document.getElementById('mylinkidOSM').text = " (OSM/"+type+id+")";
-                                document.getElementById('mylinkidOSM').text = " (OSM+)";
-				document.getElementById('mylinkidOSM').target = "_new";
-                                document.getElementById('mylinkidOSM').title = "View object on OSM.org.";
-                                document.getElementById('mylinkidID').href = linkID;
-                                document.getElementById('mylinkidID').text = " (iD+)";
-				document.getElementById('mylinkidID').target = "_new";
-                                document.getElementById('mylinkidID').title = "Edit object with iD.";
-                            } 
-                            am.addText(li," "+haswp+haswd+". ");
-                            var factor = 0.005;
-                            var left = parseFloat(obj.coord[1]) - factor;
-                            var right = parseFloat(obj.coord[1]) + factor;
-                            var bottom = parseFloat(obj.coord[0]) - factor;
-                            var top = parseFloat(obj.coord[0]) + factor;
-                            var pos = "right="+right+"&left="+left+"&top="+top+"&bottom="+bottom;
-                            // load_and_zoom - would also load area:
-                            // link = "http://127.0.0.1:8111/load_and_zoom?"+pos+"&new_layer=false&select="+type+id;
-                            var link = "http://127.0.0.1:8111/load_object?objects="+type+id+"&new_layer=false";
-                            if (j===0) {
-                                document.getElementById('mylinkidJOSM').href = link ;
-                                document.getElementById('mylinkidJOSM').text = " (JOSM+)" ;
-				document.getElementById('mylinkidJOSM').target = "_new";
-                                document.getElementById('mylinkidJOSM').title = "Load object with JSON." ;
-                            }
-                            li.appendChild(am.formatosm(op.elements[j],{"compare": obj.hascoords, "wikidata": obj.wikidata,
-									"lat":obj.coord[0],"lon":obj.coord[1]}));
-                            ol.appendChild(li);
-                        }
-                        attachdiv.appendChild(ol);
-                        if (op.elements.length === 0) {
-                            am.addText(attachdiv,"No OSM object! Check data for osm.wikidata.link below for potential matches. ",1);
-                            // Remove the above elements, as they won't work:
-                            document.getElementById("mylinkidJSON").outerHTML = " (overpass-JSON)";
-                            document.getElementById("mylinkidMAP").outerHTML = " (overpass-map)";
-                        } else {
-                            if (obj.hascoords === 0) {
-                                am.addText(attachdiv,"",1);
-                                am.addText(attachdiv,"The wikipedia/wikidata entry has no coordinates, but is linked to an OSM object. Please do not copy coordinates from OSM to wikipedia/wikidata.",1);                        
-                            }
-                        }
-                    } else {
-                        am.addText(attachdiv," Sorry, the overpass request has failed (no data).",1);
+		    } else {
+			am.addText(attachdiv," Sorry, the overpass request has failed (no data).",1);
+		    }
+                    if (obj.wikidata) {
+			console.log("osm.wikipedia.link");
+			am.getLinkData(obj);
                     }
-                } catch(err) {
-                    console.log("getOSM data error xmlhttp: "+err);
-                    am.addText(attachdiv," Sorry, the overpass request has failed. If you've loaded a lot of pages, you may be over quota - try reloading this page.");
-                    attachdiv.appendChild(am.ahref("checkStatus"," You can check your API status here","Check overpass API status.","http://overpass-api.de/api/status"));
-                    am.addText(attachdiv,"",1);
-                }
-                if (obj.wikidata) {
-                    console.log("osm.wikipedia.link");
-                    am.getLinkData(obj);
-                }
-            }
-        });
+		}
+            });
         } catch(err) {
             console.log("getOSM error in domain request: "+err);
         }
-        return 1;
+	return 1;
     };
-
 
     am.launchmap = function() {
 	try {
@@ -440,129 +406,51 @@ window.wposm = (function () {
         attachdiv.appendChild(am.ahref("mylinkOSMWIKIDATA"," (connect:"+wikidata+")","Use osm.wikidata.link to make connection from WD to OSM.",link));
         var myspan = document.createElement('span');
 	am.addHTML(myspan,"<i style=\"background-color: yellow;\"> ... Retrieving additional matches from osm.wikipedia.link (please be patient) ... </i>");
-        //var mytext = document.createTextNode(" ... Retrieving additional matches from osm.wikipedia.link (please be patient) ... ");
         myspan.id = "temporary";
-        //myspan.appendChild(mytext);
         attachdiv.appendChild(myspan);
         am.addText(attachdiv,"",1);
         try {
-                                $.ajax({
-            url: apiurl,
-            async: true,
-            dataType: "text",
-            success: function(responseText) {
-                            try {
-                    var op = JSON.parse(responseText);
-                    if (op) {
-                        myspan.innerHTML = '';
-                        var wdlat = 0;
-                        var wdlon = 0;
-                        var wdhasll = 0;
-                        if (op.wikidata.lat) {
-                            am.addText(attachdiv,"Wikidata_coords=(");
-                            var OSMExtension = "?zoom=18&mlat="+op.wikidata.lat+"&mlon="+op.wikidata.lon;
-                            link = "http://www.openstreetmap.org/"+OSMExtension;
-                            attachdiv.appendChild(am.ahref("mylinkidOSM",op.wikidata.lat+","+op.wikidata.lon,"View area in OSM",link));
-                            am.addText(attachdiv,"); ");
-                            wdlat = op.wikidata.lat;
-                            wdlon = op.wikidata.lon;
-                            wdhasll = 1;
-			    if (obj.hascoords) {
-				var distance = am.distance(parseFloat(obj.coord[0]),parseFloat(obj.coord[1]),wdlat,wdlon);
-				am.addText(attachdiv,"d(WD,WP)="+distance+"m");
-				var maxd = 300;
-				if (distance>maxd) {
-				    am.addHTML(attachdiv,", <b style=\"background-color: pink;\">DISTANCE > "+maxd+"m</b>"+
-					       " (Please check/amend wikipedia/wikidata coordinates.)");
-				}
-			    }
-			    am.addText(attachdiv,"",1);
-                        } else {
-                            am.addText(attachdiv,"Wikidata_coords not available.",1);
-                        }
-                        if (op.found_matches) {
-                            var existing = 0;
-                            var nonexisting = 0;
-                            var querystr = "";
-                            var querystrRel = "";
-                            var ol = document.createElement("ol");
-                            var li = "";
-                            for (var j = 0; j < op.osm.length; j++){
-                                if (op.osm[j].type == "relation") {
-                                    querystrRel = querystrRel + op.osm[j].type + "(" + op.osm[j].id + ");\n";
-                                } else {
-                                    querystr = querystr + op.osm[j].type + "(" + op.osm[j].id + ");\n";
-                                }
-				var liid = op.osm[j].type + op.osm[j].id;
-				var duplicate = false;
-				if (document.getElementById(liid)) {
-				    li = document.getElementById(liid);
-				    am.addText(li,"",1);
-				    am.addHTML(li,"<b>Matcher result (existing):</b> ");
-				    duplicate = true;
-//				    console.log("Entry exists.");
-				} else {
-                                    li = document.createElement("li");				   
-				    li.id = op.osm[j].type + op.osm[j].id;
-				    am.addHTML(li,"<b>Matcher result (new):</b> ");
-//				    console.log("Entry does not exist.");
-				};
-                                li.appendChild(am.formatosm(op.osm[j],{"compare":wdhasll,"lat":wdlat,"lon":wdlon,"wikidata":wikidata}));
-				if (!duplicate) 
-                                    ol.appendChild(li);
-                                if (op.osm[j].existing) {
-                                    existing++;
-                                } else {
-                                    nonexisting++;
-                                }
+                                          $.ajax({
+		      url: apiurl,
+		      async: true,
+		      dataType: "text",
+		      success: function(responseText) {
+		                          myspan.innerHTML = '';
+		    try {
+			var op = JSON.parse(responseText);
+			ap.data_owl = op;
+		    } catch(err) {
+			am.addText(attachdiv,"Sorry, the query has failed (error in parse).");
+			console.log("Parse error xmlhttp: "+err+ "JSON: "+responseText);
+		    }	
+		    if (op) {			
+			if (op.error) {
+                            am.addText(attachdiv,"The query returned no results, with error message: '"+op.error+"'. ",1);
+                            if (op.error === "no coordinates") {
+				am.addText(attachdiv,"RECOMMENDATION: add the coordinates to the wikidata item.");
                             }
-                            attachdiv.appendChild(ol);
-                            if (op.osm.length > 0) {
-                                var overpassquery = encodeURIComponent("[out:json][timeout:25];\n"+
-                                                                       "("+querystr+querystrRel+");\nout meta; >; out skel qt; "+
-                                                                       "("+querystrRel+");\nout bb;\n"+
-                                                                       "{{style: node, way, relation { text: name; }\nnode {color: blue;}\nway { color: green;}\nrelation {color:pink; fill-opacity: 0;} }}");
-                                link = "http://overpass-turbo.eu/map.html?Q="+overpassquery;
-                                attachdiv.appendChild(am.ahref("myresultsMAPall","(overpass-map with all results)","View overpass interactive map for all results,link)",link));
-                                link = "http://overpass-turbo.eu/?Q="+overpassquery;
-                                attachdiv.appendChild(am.ahref("myresultsOPQall","(overpass-turbo query)","View overpass ide for all results,link)",link));
-                                am.addText(attachdiv," If you cannot see all results, it may be that objects over overlapping.",1);
-                            }
-                            am.addText(attachdiv,"There are "+existing+" OSM objects that are already linked to this wikidata item. There are "+nonexisting+" potential matches.",1);
-                            am.addText(attachdiv," RECOMMENDATION: ");
-                            if (existing === 0) {
-                                am.addText(attachdiv," Given that there is no connection yet, ");
-                                link = "https://osm.wikidata.link/search?q="+wikidata;
-                                attachdiv.appendChild(am.ahref("mylinkOSMWIKIDATA"," click here to use osm.wikidata.link to make one.","Use osm.wikidata.link to make connection from WD to OSM.",link));
-                                am.addText(attachdiv," Alternatively you can use the iD/JOSM links above. ");
-                            } else if (existing === 1) {
-                                am.addText(attachdiv," Given that there is exactly one connection, it may well be ok. Use the above links to check. ");
-                            } else {
-                                am.addText(attachdiv," Given that there is more than one connection, you may want to use the above links to check tagging. ");
-                            }
-                            am.addText(attachdiv,"",1);
-
-                        } else {
-                            if (op.error) {
-                                am.addText(attachdiv,"The query returned no results, with error message: '"+op.error+"'. ",1);
-                                if (op.error === "no coordinates") {
-                                    am.addText(attachdiv,"RECOMMENDATION: add the coordinates to the wikidata item.");
-                                }
-                            } else {
-				if (op.response == 'ok') 
-                                    am.addText(attachdiv,"The query did not find any results (no errors). ",1);
-				else
-				    am.addText(attachdiv,"The query returned no results, with message: "+op.response+". ",1);
-				am.addText(attachdiv,"QSM query parameters: "+JSON.stringify(op.search).replace(/","/g,'", "'));
-                            }
-                        }
-                    }
-                } catch(err) {
-                    am.addText(attachdiv,"Sorry, the query has failed (error in parse).");
-                    console.log("Parse error xmlhttp: "+err+ "JSON: "+responseText);
-                }
-            }
-        });
+			} else {
+			    am.parseResponse2(attachdiv,obj,op);
+			    if (op.response == 'ok') 
+				am.addText(attachdiv,"The query did not find any results (no errors). ",1);
+			    else
+				am.addText(attachdiv,"The query returned no results, with message: "+op.response+". ",1);
+			    am.addText(attachdiv,"QSM query parameters: "+JSON.stringify(op.search).replace(/","/g,'", "'));
+			}
+		    }
+		    //console.log("ap.results="+ap.results);
+		    if (ap.results === 0) {
+			var arr = op.search.criteria;
+			var arr2 = [];
+			arr.forEach( function(str) {
+			    str = str.replace("Tag:","");
+			    arr2.push(str);
+			} );
+			ap.search3_category = arr2;
+			am.queryThree(obj,arr2);
+		    }		    
+		}
+	    });
         } catch (err) {
             am.addText(attachdiv,"Sorry, the query has failed (error in response).");
             am.addText(attachdiv,"API did not respond.");
@@ -570,6 +458,255 @@ window.wposm = (function () {
         }
         return 1;
     };
+
+    am.queryThree = function (obj,tags) {
+	console.log("query3");
+	// console.log(obj);
+	if (obj.hascoords != 1) {
+	    return 0;
+	}
+	// Set radius:
+	// var around = "(around:"+ap.search3_radius+","+obj.coord[0]+","+obj.coord[1]+")[historic]"
+	var around = "(around:"+ap.search3_radius+","+obj.coord[0]+","+obj.coord[1]+")"
+	//set categories:
+	var objects = ["node","way","relation"];
+	var overpassquery = "";
+	objects.forEach( function(object) {
+	    tags.forEach( function(tag) {
+		overpassquery += object+around+"["+tag+"]; ";
+	    } );
+	});
+	// console.log(overpassquery);
+	var querystart = encodeURIComponent("[out:json][timeout:25];");
+	var outrel = "";
+	// var overpassquery = encodeURIComponent("(node"+around+"; way"+around+"; relation"+around+";); out meta qt; ");
+	var overpassquery = encodeURIComponent("("+overpassquery+"); out meta qt; ");
+        var outskel = encodeURIComponent(" >; out meta qt; "+
+					 "{{style:\nnode {color: blue;}\nway { color: green;}\nrelation {color:pink; fill-opacity: 0;} }}");
+	var overpassmap = querystart + outrel + overpassquery + outskel;
+	overpassmap = querystart + outrel + overpassquery + outskel;
+	overpassquery = querystart + overpassquery;
+	var overpassapi = "https://api.openstreetmap.fr/oapi";
+        var oplink = overpassapi + "/interpreter?data="+overpassquery;
+	var attachdiv = document.getElementById('WikipediaOSM3005_results_element');
+	if (!attachdiv) {
+	    console.log("attachiv undefined");
+	}
+	am.addText(attachdiv,"",1);
+	am.addHTML(attachdiv,"<b>Search by radius/tags only:</b> Unlike the first two queries, these have very low confidence, and are for information only. Only add the wikidata id after careful inspection using an OSM editor. Search: ");
+	am.addText(attachdiv,around);
+	var myspan = document.createElement('span');
+        //var mytext = document.createTextNode(" ... Fetching data from overpass (should only take a sec) ... ");
+        myspan.id = "temporary";
+	am.addHTML(myspan,"<i style=\"background-color: yellow;\"> ... Fetching data from overpass (should only take a sec) ... </i>");
+        //myspan.appendChild(mytext);
+        attachdiv.appendChild(myspan);
+	var link = "";
+	var wikidataobject ="";
+        if (obj.hascoords==1) {
+	    wikidataobject = {"compare":obj.hascoords,"lat":obj.coord[0],"lon":obj.coord[1],"wikidata":obj.wikidata};
+        }
+	// console.log(oplink);
+        try {
+                                          $.ajax({
+		      url: oplink,
+		      async: true,
+		      dataType: "text",
+		      success: function(responseText) {
+		                          myspan.innerHTML = '';
+		    try {
+			var op = JSON.parse(responseText);
+			ap.data_op_2 = op;
+		    } catch (err) {
+			console.log("Error in 3rd query: "+err);
+			console.log(responseText);
+		    }
+		    if (op) {			
+			// Should be ordered by distance really...
+			var out = am.displayResults(op.elements,wikidataobject,"Radius");
+			attachdiv.appendChild(out.ol);
+			if (op.elements.length === 0) {
+			    am.addText(attachdiv,"No OSM object! We're out of options. ",1);
+			} else {
+			    if (obj.hascoords === 0) {
+				am.addText(attachdiv,"",1);
+				am.addText(attachdiv,"The wikipedia/wikidata entry has no coordinates, but is linked to an OSM object. Please do not copy coordinates from OSM to wikipedia/wikidata.",1);                        
+			    }
+			}
+		    } else {
+			am.addText(attachdiv," Sorry, the overpass request has failed (no data).",1);
+		    }
+		}
+	    });
+        } catch (err) {
+            am.addText(attachdiv,"Sorry, the 3rd query has failed (error in response).");
+            am.addText(attachdiv,"API did not respond.");
+            console.log("API error (3rd query) xmlhttp: "+err);
+        }
+    };
+
+    am.parseResponse = function (attachdiv, obj, opelements) {
+        var ol = document.createElement("ol");
+	if (opelements.length>0) {
+	    //  results have come in, so map can be launched.
+	    am.launchmap();
+	    ap.results = opelements.length;
+	}
+        for (var j = 0; j < opelements.length; j++){
+            var li = document.createElement("li");
+            var matchno = j+1;
+            var id = opelements[j].id;
+            var type = opelements[j].type;
+	    li.id = type + id;
+            var haswp = "";
+            if (opelements[j].tags.wikipedia) {
+                haswp = "WP";
+            }
+            var haswd ="";
+            if (opelements[j].tags.wikidata) {
+                haswd = "WD";
+            }
+            link = "http://www.openstreetmap.org/"+type+"/"+id;
+            var linkID = "http://www.openstreetmap.org/edit?"+type+"="+id;
+            // For the first result, amend the earlier links:
+            if (j===0) {
+                document.getElementById('mylinkidOSM').href = link + obj.OSMExtension;
+                // document.getElementById('mylinkidOSM').text = " (OSM/"+type+id+")";
+                document.getElementById('mylinkidOSM').text = " (OSM*)";
+		document.getElementById('mylinkidOSM').target = "_new";
+                document.getElementById('mylinkidOSM').title = "View object on OSM.org.";
+                document.getElementById('mylinkidID').href = linkID;
+                document.getElementById('mylinkidID').text = " (iD*)";
+		document.getElementById('mylinkidID').target = "_new";
+                document.getElementById('mylinkidID').title = "Edit object with iD.";
+            } 
+            am.addText(li," "+haswp+haswd+". ");
+            var factor = 0.005;
+            var left = parseFloat(obj.coord[1]) - factor;
+            var right = parseFloat(obj.coord[1]) + factor;
+            var bottom = parseFloat(obj.coord[0]) - factor;
+            var top = parseFloat(obj.coord[0]) + factor;
+            var pos = "right="+right+"&left="+left+"&top="+top+"&bottom="+bottom;
+            // load_and_zoom - would also load area:
+            // link = "http://127.0.0.1:8111/load_and_zoom?"+pos+"&new_layer=false&select="+type+id;
+            var link = "http://127.0.0.1:8111/load_object?objects="+type+id+"&new_layer=false";
+            if (j===0) {
+                document.getElementById('mylinkidJOSM').href = link ;
+                document.getElementById('mylinkidJOSM').text = " (JOSM*)" ;
+		document.getElementById('mylinkidJOSM').target = "_new";
+                document.getElementById('mylinkidJOSM').title = "Load object with JSON." ;
+            }
+            li.appendChild(am.formatosm(opelements[j],{"compare": obj.hascoords, "wikidata": obj.wikidata,
+							"lat":obj.coord[0],"lon":obj.coord[1]}));
+            ol.appendChild(li);
+        }
+	attachdiv.appendChild(ol);
+	return 1;
+    };
+
+    am.parseResponse2 = function(attachdiv,obj,op) {
+	try {
+            var wdlat = 0;
+            var wdlon = 0;
+            var wdhasll = 0;
+            if (op.wikidata.lat) {
+		ap.wikidata_coord = [op.wikidata.lat,op.wikidata.lon];
+		ap.has_wikidata_coords = true;
+		am.addText(attachdiv,"Wikidata_coords=(");
+		var OSMExtension = "?zoom=18&mlat="+op.wikidata.lat+"&mlon="+op.wikidata.lon;
+		var link = "http://www.openstreetmap.org/"+OSMExtension;
+		attachdiv.appendChild(am.ahref("mylinkidOSM",op.wikidata.lat+","+op.wikidata.lon,"View area in OSM",link));
+		am.addText(attachdiv,"); ");
+		wdlat = op.wikidata.lat;
+		wdlon = op.wikidata.lon;
+		wdhasll = 1;
+		var wikidataobject = {"compare":wdhasll,"lat":wdlat,"lon":wdlon,"wikidata":obj.wikidata};
+		if (obj.hascoords) {
+		    var distance = am.distance(parseFloat(obj.coord[0]),parseFloat(obj.coord[1]),wdlat,wdlon);
+		    am.addText(attachdiv,"d(WD,WP)="+distance+"m");
+		    var maxd = 300;
+		    if (distance>maxd) {
+			am.addHTML(attachdiv,", <b style=\"background-color: pink;\">DISTANCE > "+maxd+"m</b>"+
+				   " (Please check/amend wikipedia/wikidata coordinates.)");
+		    }
+		}
+		am.addText(attachdiv,"",1);
+            } else {
+		am.addText(attachdiv,"Wikidata_coords not available.",1);
+            }
+            if (op.found_matches) {
+		//would be better to count matches
+		ap.results++;
+		var out = am.displayResults(op.osm,wikidataobject,"Matcher");
+		attachdiv.appendChild(out.ol);
+		if (op.osm.length > 0) {
+                    var overpassquery = encodeURIComponent("[out:json][timeout:25];\n"+
+							   "("+out.querystr+out.querystrRel+");\nout meta; >; out skel qt; "+
+							   "("+out.querystrRel+");\nout bb;\n"+
+							   "{{style: node, way, relation { text: name; }\nnode {color: blue;}\nway { color: green;}\nrelation {color:pink; fill-opacity: 0;} }}");
+                    link = "http://overpass-turbo.eu/map.html?Q="+overpassquery;
+                    attachdiv.appendChild(am.ahref("myresultsMAPall","(overpass-map with all results)","View overpass interactive map for all results,link)",link));
+                    link = "http://overpass-turbo.eu/?Q="+overpassquery;
+                    attachdiv.appendChild(am.ahref("myresultsOPQall","(overpass-turbo query)","View overpass ide for all results,link)",link));
+                    am.addText(attachdiv," If you cannot see all results, it may be that objects over overlapping.",1);
+		}
+		am.addText(attachdiv,"There are "+out.existing+" OSM objects that are already linked to this wikidata item. There are "+out.nonexisting+" potential matches.",1);
+		am.addText(attachdiv," RECOMMENDATION: ");
+		if (out.existing === 0) {
+                    am.addText(attachdiv," Given that there is no connection yet, ");
+                    link = "https://osm.wikidata.link/search?q="+obj.wikidata;
+                    attachdiv.appendChild(am.ahref("mylinkOSMWIKIDATA"," click here to use osm.wikidata.link to make one.","Use osm.wikidata.link to make connection from WD to OSM.",link));
+                    am.addText(attachdiv," Alternatively you can use the iD/JOSM links above. ");
+		} else if (out.existing === 1) {
+                    am.addText(attachdiv," Given that there is exactly one connection, it may well be ok. Use the above links to check. ");
+		} else {
+                    am.addText(attachdiv," Given that there is more than one connection, you may want to use the above links to check tagging. ");
+		}
+		am.addText(attachdiv,"",1);
+            }
+	} catch (err) {
+	    console.log("Error in Response2: "+err);
+	}
+    };
+
+    am.displayResults = function (oposm,wikidataobject,idstring) {
+    	var existing = 0;
+	var nonexisting = 0;
+	var querystr = "";
+	var querystrRel = "";
+	var ol = document.createElement("ol");
+	var li = "";
+	for (var j = 0; j < oposm.length; j++){
+            if (oposm[j].type == "relation") {
+		querystrRel = querystrRel + oposm[j].type + "(" + oposm[j].id + ");\n";
+            } else {
+		querystr = querystr + oposm[j].type + "(" + oposm[j].id + ");\n";
+            }
+	    var liid = oposm[j].type + oposm[j].id;
+	    var duplicate = false;
+	    if (document.getElementById(liid)) {
+		li = document.getElementById(liid);
+		am.addText(li,"",1);
+		am.addHTML(li,"<b>"+idstring+" result (existing):</b> ");
+		duplicate = true;
+		// console.log("Entry exists.");
+	    } else {
+		li = document.createElement("li");				   
+		li.id = oposm[j].type + oposm[j].id;
+		am.addHTML(li,"<b>"+idstring+" result (new):</b> ");
+		// console.log("Entry does not exist.");
+	    };
+            li.appendChild(am.formatosm(oposm[j],wikidataobject));
+	    if (!duplicate) 
+		ol.appendChild(li);
+            if (oposm[j].existing) {
+		existing++;
+            } else {
+		nonexisting++;
+            }
+	}
+	return {"existing":existing, "nonexisting":nonexisting, "ol":ol ,"querystrRel":querystrRel,"querystr":querystr};
+    }
 
     /**
 	 * Decodes all HTML entities in the string provided.
@@ -630,13 +767,14 @@ window.wposm = (function () {
             }
          }
         var link = "http://www.openstreetmap.org/"+type+"/"+id+mlatmlon;
-        element.appendChild(am.ahref("mylinkidOSMx"," (OSM)","View object on OSM",link));
+        element.appendChild(am.ahref("mylinkidOSMx"," (OSM*)","View object on OSM",link));
         link = "http://www.openstreetmap.org/edit?"+type+"="+id;
-        element.appendChild(am.ahref("mylinkidOSMx"," (iD)","Edit object in iD",link));
+        element.appendChild(am.ahref("mylinkidOSMx"," (iD*)","Edit object in iD",link));
         link = "http://127.0.0.1:8111/load_object?objects="+type+id+"&new_layer=false";
-        element.appendChild(am.ahref("mylinkidJOSMx"," (JOSM,","Load object with JOSM (same layer)",link,1));
+        element.appendChild(am.ahref("mylinkidJOSMx"," (JOSM*,","Load object with JOSM (same layer)",link,1));
         link = "http://127.0.0.1:8111/load_object?objects="+type+id+"&new_layer=false&addtags=wikidata="+wikidata;
-        element.appendChild(am.ahref("mylinkidJOSMxEdit"," add) ","Add wikidata to with JOSM (same layer)",link,1));
+	// Should see wheher WP tag is present - if not, add it as well.
+        element.appendChild(am.ahref("mylinkidJOSMxEdit"," +wd) ","Add wikidata to with JOSM (same layer)",link,1));
         text = "(";
         var distance = 0;
         var lat = "";
@@ -764,15 +902,11 @@ function(){ opencloseWin(href); return false;}
     }
 
     am.distance = function(lat, lon, lat2, lon2) {
-//        console.log(lat, lon, lat2, lon2);
         var pi = Math.PI;
         var rad = pi/180.0;
         var dx = (lon - lon2)*rad * Math.cos((lat + lat2)/2*rad);
-//        console.log(dx);
         var dy = (lat - lat2)*rad ;
-//        console.log(dy);
         var dd = Math.pow(Math.pow(dx,2) + Math.pow(dy,2),0.5) * 6371.0 * 1000.0;
-//        console.log(dd);
         return Math.round(dd);
     };
 
