@@ -367,6 +367,7 @@ window.wposm = (function () {
                 console.log("Discarding coords from geohack: "+coord3);
                 coord3="";
             }
+	    console.log("Method 2 coords: "+coord3);
             coord_ = coord3.split(",");
         } catch(err) {
             console.log("Unable to retrieve coordinates from wikipage (method 2). "+err);
@@ -604,7 +605,8 @@ window.wposm = (function () {
 				if (ap.results_op == 0) {
 				    document.getElementById("mylinkidOSM").outerHTML = "<s>"+document.getElementById("mylinkidOSM").innerHTML+"</s>";
 				    document.getElementById("mylinkidID").outerHTML = "<s>"+document.getElementById("mylinkidID").innerHTML+"</s>";
-				    document.getElementById("mylinkidJOSM").outerHTML = " <s>(JSON)</s>";
+				    if (!ap.has_wikipedia_coords)
+					document.getElementById("mylinkidJOSM").outerHTML = " <s>(JOSM)</s>";
 				};
                             }
 			} else {
@@ -660,10 +662,13 @@ window.wposm = (function () {
 	    return 0;
 	}
 	var objcoord = [0,0];
-	if (obj.hascoords != 1) {
+	//	if (obj.hascoords == 1) {
+	if (ap.has_wikipedia_coords) {
 	    objcoord =  ap.wikipedia_coord;
-	}  else {
+	}  else	if (ap.has_wikidata_coords) {
 	    objcoord =  ap.wikidata_coord;
+	} else {
+	    console.log("Error in selecting coords for query three. We should not get here...");
 	}
 	// Set radius:
 	// var around = "(around:"+ap.search3_radius+","+obj.coord[0]+","+obj.coord[1]+")[historic]"
@@ -740,7 +745,7 @@ window.wposm = (function () {
 			var out = am.displayResults(op.elements,wikidataobject,"Radius");
 			attachdiv.appendChild(out.ol);
 			if (op.elements.length === 0) {
-			    am.addHTML(attachdiv," <span style=\"background-color: yellow;\">No OSM object! We're out of options.</span><br>");
+			    am.addHTML(attachdiv," <span style=\"background-color: yellow;\">No OSM object! We're out of options for existing objects.</span>Go ahead and add a new one!<br>");
 			} else {
 			    if (obj.hascoords === 0) {
 				am.addText(attachdiv,"",1);
@@ -1065,9 +1070,16 @@ window.wposm = (function () {
 	// Add JOSM link to add WD/WP tags
 	var josmcommand = "http://127.0.0.1:8111/load_object?objects=";
 	if (ap.defaults.load_and_zoom === 'true') {
+	    var mylon = "";
+	    var mylat = "";
 	    // Use coords from extra, as these are guaranteed to exist (at present, we don't calculate coords for ways/rels)
-	    var mylon = parseFloat(extra.lon);
-	    var mylat = parseFloat(extra.lat);
+	    if (lat === "") {
+		mylon = parseFloat(extra.lon);
+		mylat = parseFloat(extra.lat);
+	    } else {
+		mylon = lon;
+		mylat = lat;
+	    }
 	    // load_and_zoom - load area
 	    var factor = 0.005;
 	    var left = parseFloat(mylon) - factor;
