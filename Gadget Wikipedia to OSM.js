@@ -297,7 +297,7 @@ window.wposm = (function () {
             // Fetch wikidata
             wd = document.getElementById('t-wikibase').getElementsByTagName("a")[0].href;
             wd = wd.replace(/.*\//,"");
-            am.addText(attachdiv,""+wd);
+            am.addText(attachdiv,""+wd+" ");
         } catch(err) {
             am.addText(attachdiv,"No wikidata!");
         }
@@ -842,7 +842,7 @@ window.wposm = (function () {
 		document.getElementById('mylinkidID').target = "_new";
                 document.getElementById('mylinkidID').title = "Edit object with iD.";
             } 
-            am.addText(li," "+haswp+haswd+". ");
+            am.addHTML(li," <i style=\"background-color: lightgreen;\">"+haswp+haswd+".</i> ");
 	    var josmcommand = "http://127.0.0.1:8111/load_object?objects=";
 	    if (ap.defaults.load_and_zoom === 'true' && obj.hascoords) {
 		// load_and_zoom - load area
