@@ -136,14 +136,7 @@ window.wposm = (function () {
 	    var mapdiv = document.createElement("div");
 	    mapdiv.style = "display: none; position: relative;";
 	    mapdiv.id = "WikipediaOSM3005_map_element";
-	    var div = document.createElement("div");
-	    var span = document.createElement("span");
-	    // span.style = "background-color: yellow; text-decoration: italic;";
-	    span.innerHTML = "Map will load automatically if possible.";
-	    span.id = "WikipediaOSM3005_map_span";
-	    span.style = "position: absolute;  top: 0;  left: 0; padding: 30px;";
-	    div.appendChild(span);
-	    mapdiv.appendChild(div);
+	    // Map iframe
 	    var mapframe = document.createElement("iframe");
 	    mapframe.id = "WikipediaOSM3005_map_element_map";
 	    mapframe.style = "position: relative;  top: 0;  left: 0; width: 100%; ";
@@ -154,6 +147,15 @@ window.wposm = (function () {
 		mapframe.height = parseInt(ap.default_mapheight);
 	    }
 	    mapdiv.appendChild(mapframe);
+	    // Notification for map loading
+	    var div = document.createElement("div");
+	    var span = document.createElement("span");
+	    // span.style = "background-color: yellow; text-decoration: italic;";
+	    span.innerHTML = "Map will load automatically if possible.";
+	    span.id = "WikipediaOSM3005_map_span";
+	    span.style = "position: absolute;  top: 0;  left: 0; padding: 30px;";
+	    div.appendChild(span);
+	    mapdiv.appendChild(div);
 	    attachdiv.appendChild(mapdiv);
 	    // Options
 	    var options = document.createElement("div");
