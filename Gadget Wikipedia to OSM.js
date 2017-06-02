@@ -612,8 +612,10 @@ window.wposm = (function () {
 			} else {
 			    am.parseResponse2(attachdiv,obj,op);
 			    if (op.response == 'ok') {
-				am.addHTML(attachdiv,"<span style=\"background-color: yellow;\">No results.</span> ");
-				am.addText(attachdiv,"The query did not find any results (no errors). ",1);
+				if (ap.results_owl === 0) {
+				    am.addHTML(attachdiv,"<span style=\"background-color: yellow;\">No results.</span> ");
+				    am.addText(attachdiv,"The query did not find any results (no errors). ",1);
+				}
 			    } else {
 				am.addHTML(attachdiv,"<span style=\"background-color: yellow;\">No results.</span> ");
 				am.addHText(attachdiv," The query returned no results</span>, with message: "+op.response+". ",1);
@@ -917,7 +919,7 @@ window.wposm = (function () {
 		am.addText(attachdiv,"There are "+out.existing+" OSM objects that are already linked to this wikidata item. There are "+out.nonexisting+" potential matches.",1);
 		am.addText(attachdiv," RECOMMENDATION: ");
 		if (out.existing === 0) {
-                    am.addText(attachdiv," Given that there is no connection yet, ");
+                    am.addText(attachdiv," Given that there is no wikidata connection yet, ");
                     link = "https://osm.wikidata.link/search?q="+obj.wikidata;
                     attachdiv.appendChild(am.ahref("mylinkOSMWIKIDATA"," click here to use osm.wikidata.link to make one.","Use osm.wikidata.link to make connection from WD to OSM.",link));
                     am.addText(attachdiv," Alternatively you can use the iD/JOSM links above. ");
