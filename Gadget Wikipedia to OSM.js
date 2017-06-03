@@ -3,51 +3,55 @@
 // * To learn more about this script, visit https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget
 window.wposm = (function () {
     var wposmObj = {
-        props: { addBasicsResult: "",
-		 // number of api results
-		 results: 0,
-		 results_op: 0,
-		 results_owl: 0,
-		 results_op_2: 0,
-		 // data retrieved from api queries
-		 data_op: "",
-		 data_owl: "",
-		 data_op_2: "",
-		 // wikipedia page title
-		 title: "",
-		 // wikipedia page language
-		 lang: "",
-		 // wikipedia page id = lang:title
-		 wikipedia: "",
-		 // coordinates obtained from wikipedia page
-		 wikipedia_coord: [0,0],
-		 has_wikipedia_coords: false,
-		 // wikidata id
-		 wikidata: "",
-		 // coordinates obtained from wikidata
-		 wikidata_coord: [0,0],
-		 has_wikidata_coords: false,
-		 // overpass API URIs - primary
-		 overpassapi: "https://overpass-api.de/api",
-		 // overpass API URIs - secondary
-		 overpassapi2: "https://api.openstreetmap.fr/oapi",
-		 // html elements saved for reference
-		 overpassmapurl: "https://overpass-turbo.eu/map.html?Q=",
-		 doc: [],
-		 // default settings (adjusted through options menu)
-		 defaults: {
-		     "mapheight": "400",
-		     "search3": "false",
-		     "search3_radius": "1000",
-		     "search3_category": "historic=archaeological_site",
-		     "extra_josm_tags": "",
-		     "use_secondary_api": "false",
-		     "load_and_zoom": "false"
-		 },
-		 // timeout for JOSM links in ms.
-		 linktimeout: 1000,
-		 attachToSiteNotice: false
-	       },
+        props: {
+	    flowControl: 0,
+	    addBasicsResult: "",
+	    // number of api results
+	    results: -1,
+	    results_op: -1,
+	    results_owl: -1,
+	    results_op_2: -1,
+	    // data retrieved from api queries
+	    data_op: "",
+	    data_owl: "",
+	    data_op_2: "",
+	    // wikipedia page title
+	    title: "",
+	    // wikipedia page language
+	    lang: "",
+	    // wikipedia page id = lang:title
+	    wikipedia: "",
+	    // coordinates obtained from wikipedia page
+	    wikipedia_coord: [0,0],
+	    has_wikipedia_coords: false,
+	    // wikidata id
+	    wikidata: "",
+	    // coordinates obtained from wikidata
+	    wikidata_coord: [0,0],
+	    has_wikidata_coords: false,
+	    // overpass API URIs - primary
+	    overpassapi: "https://overpass-api.de/api",
+	    // overpass API URIs - secondary
+	    overpassapi2: "https://api.openstreetmap.fr/oapi",
+	    // html elements saved for reference
+	    overpassmapurl: "https://overpass-turbo.eu/map.html?Q=",
+	    doc: [],
+	    // default settings (adjusted through options menu)
+	    defaults: {
+		"mapheight": "400",
+		"mapshow": "", //TODO: needs implementing
+		"search_owl": "always", // values: false: never run; true: run if needed; always: always run
+		"search3": "false", // Values: false: never; true: run in sequence, if needed; asap: run after 1st overpassquery, not after osm.wikidata.link
+		"search3_radius": "1000",
+		"search3_category": "historic=archaeological_site",
+		"extra_josm_tags": "",
+		"use_secondary_api": "false",
+		"load_and_zoom": "false"
+	    },
+	    // timeout for JOSM links in ms.
+	    linktimeout: 1000,
+	    attachToSiteNotice: false
+	},
         methods: {}
     },
 
@@ -67,36 +71,109 @@ window.wposm = (function () {
            ) {
             return; //Don't run the script under any of these conditions.
         }
-        	am.initialiseDefault("mapheight");
+        	am.initialiseDefault("use_secondary_api");
+	am.initialiseDefault("mapheight");
+	am.initialiseDefault("search_owl");
 	am.initialiseDefault("search3");
 	am.initialiseDefault("search3_radius");
 	am.initialiseDefault("search3_category");
 	am.initialiseDefault("extra_josm_tags");
-	am.initialiseDefault("use_secondary_api");
 	am.initialiseDefault("load_and_zoom");
         am.configureMenu();
         if (am.getb('active')) {
 	    am.configureOptions();
             ap.addBasicsResult = am.addBasics(); //checks for types visible from article page
-            if (ap.addBasicsResult) {
-		// ap.addBasicsResult = {"link": link, "OSMExtension": OSMExtension, "coord":coord, "hascoords":hascoords, "wikidata" : wd,"coordissues":coordissues};
-                console.log("getOSMData");
-                am.getOSMData(ap.addBasicsResult);
-            }
+	    am.flowControl("overpass",ap.addBasicsResult);
         } else {
         }
     };
 
     // Unfinished:
     // control is returned here after each async query to execute the next stage (if needed)
-    am.flowControl = function(stage) {
+    am.flowControl = function(stage,obj) {
 	ap.flowControl++;
+	console.log("flowControl: "+ap.flowControl+", stage="+stage);
 	switch (ap.flowControl) {
 	case 1:
 	    break;
 	case 2:
 	    break;
 	case 3:
+	    break;
+	}
+
+	switch (stage) {
+	case "overpass":	    
+            if (obj) {
+		// obj = ap.addBasicsResult = {"link": link, "OSMExtension": OSMExtension, "coord":coord, "hascoords":hascoords, "wikidata" : wd,"coordissues":coordissues};
+                console.log("getOSMData");
+                am.getOSMData(obj);
+            }
+	    break;
+	case "overpass_done":
+	    // First query (overpass) returns control here
+	    if ((ap.defaults.search_owl === 'always' || (ap.defaults.search_owl === 'true' && ap.results_op === 0))) {
+		if (obj.wikidata) {
+		    console.log("osm.wikipedia.link");
+		    am.flowControl("osm.wikidata.link",obj);
+		    if (ap.defaults.search3 === 'asap' || ap.defaults.search3 === 'always-asap')
+			am.flowControl("op_2",obj);
+		} else {
+		    console.log("Cannot run owl query without wikidata item.");
+		    am.flowControl("op_2",obj);
+		}
+	    } else {
+		am.flowControl("op_2",obj);
+	    }
+	    break;
+	case "osm.wikidata.link":
+	    // When this is called (manually or automatically), the search should run, as long as it hasn't run before
+	    if (ap.results_owl == -1) {
+		ap.results_owl = 0;
+		am.getLinkData(obj);
+	    } else {
+		console.log("owl has already run. Won't run a 2nd time.");
+	    }
+	    break;
+	case "osm.wikidata.link_done":
+	    if ((ap.defaults.search3 === 'always' || ap.defaults.search3 === 'always-asap' || (ap.defaults.search3 === 'true' && ap.results_owl === 0))) {
+		am.flowControl("op_2",obj);
+	    }
+	    break;
+	case "op_2":
+	    // When this is called (manually or automatically), the search should run, as long as it hasn't run before
+	    if (ap.results_op_2 == -1) {
+		ap.results_op_2 = 0;
+		// Second query (osm.wikidata.link) returns control here
+		// However, also can be called alone.
+		if (ap.results === 0 || true) { // || other_conditions ) {
+		    var arr2 = [];
+		    // alert(ap.defaults.search3_category);
+		    arr2 = ap.defaults.search3_category.split("|");
+		    // console.log(arr2);
+		    if (ap.data_owl)
+			if (ap.data_owl.search)
+			    if (ap.data_owl.search.criteria) {
+				var arr = ap.data_owl.search.criteria;
+				if (arr.length > 0) {
+				    arr.forEach( function(str) {
+					str = str.replace("Tag:","");
+					str = str.replace("Key:","");
+					str = str.replace("=","\"=\"");
+					str = "\""+str+"\"";
+					arr2.push(str);
+				    } );
+				}
+			    }
+		    // ap.search3_category = arr2;
+		    if (ap.defaults.search3 === 'true')
+			am.queryThree(obj,arr2);
+		    else
+			console.log("op_2 disabled");
+		}
+	    } else {
+		console.log("op_2 has already run. Won't run a 2nd time.");
+	    }
 	    break;
 	}
     };
@@ -216,27 +293,30 @@ window.wposm = (function () {
     am.configureOptions = function() {
 	am.addHTML(ap.doc.options,"<b>Options</b>");
 	am.addText(ap.doc.options,"",1);
-	am.addHTML(ap.doc.options,"<i>These options are expermental. They are saved in the browser, not your wkipedia account. You'll need to reload the page for them to take effect. Click outside the box to save the value.</i><br>");
+	am.addHTML(ap.doc.options,"<i>These options are expermental. They are saved in the browser, not your wkipedia account. Clicking outside the field saves the value. You'll need to reload the page for them to take effect. Options are strings and not validated - make sure you spell them right.</i><br>");
 	// Extra tagging
-	am.addText(ap.doc.options,"Should secondary api be used? Less timeouts, but data not always up to date. Enter true/false.",1);	
+	am.addHTML(ap.doc.options,"<b>Secondary API.</b> Should secondary api be used? Less timeouts, but data not always up to date. If you are mass tagging a lot of objects that have not been recently tagged, use '<b>true</b>'. If you are checking recently tagged objects, used '<b>false</b>'. Enter <b>true</b>/<b>false</b>.",1);	
 	am.newInput(ap.doc.options,"use_secondary_api");
 	// Map height
-	am.addText(ap.doc.options,"Height of map",1);	
+	am.addHTML(ap.doc.options,"<b>Height of map</b>",1);	
 	am.newInput(ap.doc.options,"mapheight");
+	// 3rd query
+	am.addHTML(ap.doc.options,"<b>SECOND QUERY (osm.wikidata.link).</b> Run a osm.wikidata.link query to look for matches. Enter: <b>false</b>: never; <b>true</b>: run after 1st overpass query if needed; <b>always</b>: run always.",1);	
+	am.newInput(ap.doc.options,"search_owl");
+	// 3rd query
+	am.addHTML(ap.doc.options,"<b>THIRD QUERY.</b> Run a 2nd overpass query to look for nearby objects. Enter: <b>false</b>: never; <b>true</b>: run after osm.wikidata.link (if needed); <b>asap</b>: run after 1st overpassquery, not after osm.wikidata.link; <b>always</b>: run even if there are no results; <b>always-asap</b>: combine both.",1);	
+	am.newInput(ap.doc.options,"search_owl");
 	// Radius
-	am.addText(ap.doc.options,"THIRD QUERY. Run a 3rd query. Enter true/false.",1);	
-	am.newInput(ap.doc.options,"search3");
-	// Radius
-	am.addText(ap.doc.options,"THIRD QUERY. Radius for 3rd query in metres. (If you set this too large, your query may time out. Max 5000m.)",1);	
+	am.addHTML(ap.doc.options,"<b>THIRD QUERY.</b> Radius for 3rd query in metres. (If you set this too large, your query may time out, especially in mode 'asap'. Recommended max 5000m.)",1);	
 	am.newInput(ap.doc.options,"search3_radius");
 	// Query terms
-	am.addText(ap.doc.options,"THIRD QUERY. Extra query terms (for 3rd query), separate with '|'. (If you leave this empty, your query may time out.)",1);	
+	am.addHTML(ap.doc.options,"<b>THIRD QUERY.</b> Extra query terms (for 3rd query), separate with '|'. (If you leave this empty, your query may time out, especially in mode 'asap'.)",1);	
 	am.newInput(ap.doc.options,"search3_category");
 	// Extra tagging
-	am.addText(ap.doc.options,"JOSM: Tags to add when adding tags with JOSM, separate with '|'",1);	
+	am.addHTML(ap.doc.options,"<b>JOSM:</b> Tags to add when adding tags with JOSM, separate with '|'",1);	
 	am.newInput(ap.doc.options,"extra_josm_tags");
 	// Use load_and_zoom instead of load_object
-	am.addText(ap.doc.options,"JOSM: When adding tags with JOSM, use load_and_zoom instead of load_object (where possible).",1);	
+	am.addHTML(ap.doc.options,"<b>JOSM:</b> When adding tags with JOSM, use load_and_zoom instead of load_object (where possible).",1);	
 	am.newInput(ap.doc.options,"load_and_zoom");
 	// Gadget on/off
 	am.addText(ap.doc.options,"Use the menu item in left-hand menu to turn gadget on/off.",1);
@@ -562,10 +642,7 @@ window.wposm = (function () {
 		    } else {
 			am.addText(attachdiv," Sorry, the overpass request has failed (no data).",1);
 		    }
-                    if (obj.wikidata) {
-			console.log("osm.wikipedia.link");
-			am.getLinkData(obj);
-                    }
+		    am.flowControl("overpass_done",obj);
 		}
             });
         } catch(err) {
@@ -600,7 +677,7 @@ window.wposm = (function () {
     };
 
     am.updatemap = function (href) {
-	console.log("Map url = "+href);
+	// console.log("Map url = "+href);
 	var mapframe = document.getElementById("WikipediaOSM3005_map_element_map");
 	if (!mapframe.src || mapframe.src === '') {
 	    mapframe.src = href;
@@ -672,24 +749,7 @@ window.wposm = (function () {
 			}
 		    }
 		    //console.log("ap.results="+ap.results);
-		    if (ap.results === 0) {
-			var arr = op.search.criteria;
-			var arr2 = [];
-			// alert(ap.defaults.search3_category);
-			arr2 = ap.defaults.search3_category.split("|");
-			// console.log(arr2);
-			if (arr.length > 0) {
-			    arr.forEach( function(str) {
-				str = str.replace("Tag:","");
-				str = str.replace("Key:","");
-				str = str.replace("=","\"=\"");
-				str = "\""+str+"\"";
-				arr2.push(str);
-			    } );
-			};
-			// ap.search3_category = arr2;
-			am.queryThree(obj,arr2);
-		    }		    
+		    am.flowControl("osm.wikidata.link_done",obj);
 		}
 	    });
         } catch (err) {
@@ -738,7 +798,7 @@ window.wposm = (function () {
 	    else
 		overpassquery += object+around+"; ";
 	});
-	console.log("query3="+overpassquery);
+	//console.log("query3="+overpassquery);
 	var querystart = encodeURIComponent("[out:json][timeout:25];");
 	var outrel = "";
 	// var overpassquery = encodeURIComponent("(node"+around+"; way"+around+"; relation"+around+";); out meta qt; ");
@@ -747,7 +807,7 @@ window.wposm = (function () {
 					 "{{style:\nnode {color: blue;}\nway { color: green;}\nrelation {color:pink; fill-opacity: 0;} }}");
 	var overpassmap = querystart + outrel + overpassquery + outskel;
 	overpassmap = ap.overpassmapurl + querystart + outrel + overpassquery + outskel;
-	console.log("HERE: "+overpassmap);
+	// console.log("HERE: "+overpassmap);
 	overpassquery = querystart + overpassquery;
 	// var overpassapi = "https://api.openstreetmap.fr/oapi";
 	var overpassapi = ap.overpassapi;
@@ -1147,7 +1207,7 @@ window.wposm = (function () {
 	    var top = parseFloat(mylat) + factor;
 	    var pos = "right="+right+"&left="+left+"&top="+top+"&bottom="+bottom;		
 	    josmcommand = "http://127.0.0.1:8111/load_and_zoom?"+pos+"&select=";
-	    console.log(josmcommand);
+	    // console.log(josmcommand);
 	}
         link = josmcommand+type+id+"&new_layer=false";
         link += "&addtags=";
@@ -1237,6 +1297,9 @@ window.wposm = (function () {
 	var myspan = document.createElement('span');
         myspan.innerHTML = text;	   
         obj.appendChild(myspan);
+        if (br == 1) {
+            obj.appendChild(document.createElement('br'));
+        }
     };
 
     am.addSpan = function(obj,id,text) {
