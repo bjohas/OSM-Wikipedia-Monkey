@@ -87,7 +87,6 @@ window.wposm = (function () {
         }
     };
 
-    // Unfinished:
     // control is returned here after each async query to execute the next stage (if needed)
     am.flowControl = function(stage,obj) {
 	ap.flowControl++;
