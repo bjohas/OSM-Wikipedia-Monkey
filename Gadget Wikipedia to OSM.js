@@ -125,7 +125,7 @@ window.wposm = (function () {
 	    }
 	    break;
 	case "osm.wikidata.link":
-	    // When this is called (manually or automatically), the search should run, as long as it hasn't run before
+	    // When this is called (manually or automatically), the search should run, as long as it hasn't run before.
 	    if (ap.results_owl == -1) {
 		ap.results_owl = 0;
 		am.getLinkData(obj);
@@ -139,7 +139,7 @@ window.wposm = (function () {
 	    }
 	    break;
 	case "op_2":
-	    // When this is called (manually or automatically), the search should run, as long as it hasn't run before
+	    // When this is called (manually or automatically), the search should run, as long as it hasn't run before.
 	    if (ap.results_op_2 == -1) {
 		ap.results_op_2 = 0;
 		// Second query (osm.wikidata.link) returns control here
@@ -164,10 +164,10 @@ window.wposm = (function () {
 				}
 			    }
 		    // ap.search3_category = arr2;
-		    if (ap.defaults.search3 === 'true')
+		    if (ap.defaults.search3 !== 'false')
 			am.queryThree(obj,arr2);
 		    else
-			console.log("op_2 disabled");
+			console.log("op_2 disabled: "+ap.defaults.search3);
 		}
 	    } else {
 		console.log("op_2 has already run. Won't run a 2nd time.");
@@ -177,7 +177,7 @@ window.wposm = (function () {
     };
 
     // Unfinished:
-    // main links setting - rewrites text and target
+    // main links setting - rewrites text and href
     am.mainLinkControl = function(target) {
 	switch (target) {
 	case "wikipedia_coord":
@@ -302,7 +302,7 @@ window.wposm = (function () {
 	am.addHTML(ap.doc.options,"<b>SECOND QUERY (osm.wikidata.link).</b> Run a osm.wikidata.link query to look for matches. Enter: <b>false</b>: never; <b>true</b>: run after 1st overpass query if needed; <b>always</b>: run always.",1);	
 	am.newInput(ap.doc.options,"search_owl");
 	// 3rd query
-	am.addHTML(ap.doc.options,"<b>THIRD QUERY.</b> Run a 2nd overpass query to look for nearby objects. Enter: <b>false</b>: never; <b>true</b>: run after osm.wikidata.link (if needed); <b>asap</b>: run after 1st overpassquery, not after osm.wikidata.link; <b>always</b>: run even if there are no results; <b>always-asap</b>: combine both.",1);	
+	am.addHTML(ap.doc.options,"<b>THIRD QUERY.</b> Run a 2nd overpass query to look for nearby objects. Enter: <b>false</b>: never; <b>true</b>: run after osm.wikidata.link (if needed); <b>asap</b>: run after 1st overpassquery, not after osm.wikidata.link; <b>always</b>: run even if there are previous results; <b>always-asap</b>: combine both.",1);	
 	am.newInput(ap.doc.options,"search_owl");
 	// Radius
 	am.addHTML(ap.doc.options,"<b>THIRD QUERY.</b> Radius for 3rd query in metres. (If you set this too large, your query may time out, especially in mode 'asap'. Recommended max 5000m.)",1);	
