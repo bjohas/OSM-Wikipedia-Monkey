@@ -89,7 +89,7 @@ window.wposm = (function () {
 
     // Unfinished:
     // control is returned here after each async query to execute the next stage (if needed)
-    am.flowControl = function() {
+    am.flowControl = function(stage) {
 	ap.flowControl++;
 	switch (ap.flowControl) {
 	case 1:
@@ -281,7 +281,11 @@ window.wposm = (function () {
     am.addBasics = function () {
         // Fetch page title
         var attachdiv = document.getElementById('WikipediaOSM3005_basics');
-        am.addText(attachdiv,"Wikipedia-OSM: ");
+	if (!ap.attachToSiteNotice) 
+	    attachdiv.appendChild(am.ahref("jumper","Wikipedia","jump to article content","javascript:document.getElementById('mw-content-text').scrollIntoView();",0));
+	else 
+            am.addText(attachdiv,"Wikipedia");
+	am.addText(attachdiv,"-OSM: ");	
         var title = document.getElementById('firstHeading').innerHTML;
         var wp = title;
 	ap.title = title;
@@ -299,8 +303,14 @@ window.wposm = (function () {
             wd = wd.replace(/.*\//,"");
             am.addText(attachdiv,""+wd+" ");
         } catch(err) {
-            am.addText(attachdiv,"No wikidata!");
+            am.addText(attachdiv,"(No wikidata!) ");
         }
+	am.addText(attachdiv," (");
+	am.addSpan(attachdiv,"results_op","-");
+	am.addText(attachdiv,", ");
+	am.addSpan(attachdiv,"results_owl","-");
+	am.addSpan(attachdiv,"results_op_2","");
+	am.addText(attachdiv,") ");
 	var querystart = encodeURIComponent("[out:json][timeout:25];");
 	var outrel = encodeURIComponent('relation["wikipedia"="'+wp+'"]; relation["wikidata"="'+wd+'"]; out bb;');
         var overpassquery = encodeURIComponent(
@@ -460,9 +470,9 @@ window.wposm = (function () {
 	    options_control.onclick = function() { am.toggle(this.id,"options"); return false; };
 	    am.toggle("WikipediaOSM3005_options","options",true);
 	    // Help link
-            attachdiv.appendChild(am.ahref("reportIssue"," (HELP)","Report an issue and make suggestions for this Gadget.","https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget"));
-	    if (!ap.attachToSiteNotice) 
-		attachdiv.appendChild(am.ahref("jumper","(jump to content)","jump to content","javascript:document.getElementById('mw-content-text').scrollIntoView();",0,"font-size: 70%;"));
+            attachdiv.appendChild(am.ahref("reportIssue"," (?)","Report an issue and make suggestions for this Gadget.","https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget"));
+	    //if (!ap.attachToSiteNotice) 
+	    //attachdiv.appendChild(am.ahref("jumper","(jump to content)","jump to content","javascript:document.getElementById('mw-content-text').scrollIntoView();",0,"font-size: 70%;"));
         } catch(err) {
             am.addText(attachdiv," (error: No links!)");
 	    console.log(err);
@@ -529,12 +539,13 @@ window.wposm = (function () {
 			try {
 			    am.parseResponse(attachdiv,obj,op.elements);
 			    ap.results_op = op.elements.length;
+			    document.getElementById("results_op").innerHTML = ap.results_op;
 			    if (op.elements.length === 0) {
 				am.addHTML(attachdiv," <span style=\"background-color: yellow;\">No OSM object!</span> Check data for osm.wikidata.link below for potential matches.<br>");
 				// Remove the above elements, as they won't work:
 				document.getElementById("mylinkidJSON").outerHTML = " <s>(overpass-JSON)</s>";
 				document.getElementById("mylinkidMAP").outerHTML = " <s>(overpass-map)</s>";
-				document.getElementById("WikipediaOSM3005_map_span").innerHTML = "No map available. If possible, we'll update the map with search results.";
+				document.getElementById("WikipediaOSM3005_map_span").innerHTML = "No map available. If possible, the map wll be updated with search results.";
 				document.getElementById("WikipediaOSM3005_map").innerHTML = "No map";
 			    } else {
 				if (obj.hascoords === 0) {
@@ -689,6 +700,7 @@ window.wposm = (function () {
         return 1;
     };
 
+    //TODO: Indicate a WP-tag match (as for query 1)
     am.queryThree = function (obj,tags) {
 	if (ap.defaults.search3 !== 'true') {
 	    console.log("am.queryThree: "+ap.defaults.search3);
@@ -747,7 +759,7 @@ window.wposm = (function () {
 	    console.log("attachiv undefined");
 	}
 	am.addText(attachdiv,"",1);
-	am.addHTML(attachdiv,"<b>Search by radius/tags only:</b> Unlike the first two queries, these have very low confidence, and are for information only. Only add the wikidata id after careful inspection using an OSM editor. Search: ");
+	am.addHTML(attachdiv,"<b>Nearby (uses radius/tags):</b> Unlike the first two queries, these show nearby objects that maybe related. For matching they have very low confidence, and are for information only. Only add the wikidata id after careful inspection using an OSM editor. Criteria: ");
 	am.addText(attachdiv,around);
 	am.addText(attachdiv,"; categories: ");
 	am.addText(attachdiv,ap.defaults.search3_category);
@@ -782,10 +794,11 @@ window.wposm = (function () {
 			//TODO: Should be ordered by distance really... and should fetch nodes in query, so distance can be calculated.
 			// Or at least put matches <300m in green.
 			ap.results_op_2 = op.elements.length;
+			document.getElementById("results_op_2").innerHTML = ", "+ap.results_op_2;
 			// If there were results in query3, display them on the map (only if the map is still blank)
 			if (op.elements.length > 0)
 			    am.updatemap(overpassmap);
-			var out = am.displayResults(op.elements,wikidataobject,"Radius");
+			var out = am.displayResults(op.elements,wikidataobject,"Nearby");
 			attachdiv.appendChild(out.ol);
 			if (op.elements.length === 0) {
 			    am.addHTML(attachdiv," <span style=\"background-color: yellow;\">No OSM object! We're out of options for existing objects.</span>Go ahead and add a new one!<br>");
@@ -939,10 +952,10 @@ window.wposm = (function () {
 		// probably won't get here, because op.error is usesd above.
 		am.addText(attachdiv,"Wikidata_coords not available.",1);
             }
+	    ap.results_owl = op.osm.length;
+	    document.getElementById("results_owl").innerHTML = ap.results_owl;
             if (op.found_matches) {
-		//would be better to count matches
-		ap.results+=op.osm.length;
-		ap.results_owl = op.osm.length;
+		ap.results += op.osm.length;
 		var out = am.displayResults(op.osm,wikidataobject,"Matcher");
 		attachdiv.appendChild(out.ol);
 		if (op.osm.length > 0) {
@@ -960,6 +973,7 @@ window.wposm = (function () {
 		}
 		am.addText(attachdiv,"",1);
 		am.addText(attachdiv,"There are "+out.existing+" OSM objects that are already linked to this wikidata item. There are "+out.nonexisting+" potential matches.",1);
+		document.getElementById("results_owl").innerHTML = out.existing+"+"+out.nonexisting;
 		am.addText(attachdiv," RECOMMENDATION: ");
 		if (out.existing === 0) {
                     am.addText(attachdiv," Given that there is no wikidata connection yet, ");
@@ -996,13 +1010,13 @@ window.wposm = (function () {
 	    if (document.getElementById(liid)) {
 		li = document.getElementById(liid);
 		am.addText(li,"",1);
-		am.addHTML(li,"<b>"+idstring+" result (existing):</b> ");
+		am.addHTML(li,"<b>"+idstring+" (existing):</b> ");
 		duplicate = true;
 		// console.log("Entry exists.");
 	    } else {
 		li = document.createElement("li");				   
 		li.id = oposm[j].type + oposm[j].id;
-		am.addHTML(li,"<b>"+idstring+" result (new):</b> ");
+		am.addHTML(li,"<b>"+idstring+" (new):</b> ");
 		// console.log("Entry does not exist.");
 	    };
             li.appendChild(am.formatosm(oposm[j],wikidataobject));
@@ -1221,6 +1235,13 @@ window.wposm = (function () {
 
     am.addHTML = function(obj,text,br) {
 	var myspan = document.createElement('span');
+        myspan.innerHTML = text;	   
+        obj.appendChild(myspan);
+    };
+
+    am.addSpan = function(obj,id,text) {
+	var myspan = document.createElement('span');
+	myspan.id = id;
         myspan.innerHTML = text;	   
         obj.appendChild(myspan);
     };
