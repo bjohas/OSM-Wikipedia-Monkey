@@ -56,7 +56,6 @@ window.wposm = (function () {
     },
 
 	//TODO:	if (ap.defaults.load_and_zoom === 'true') - should also add a zoom for add_node (add separate link, or in one?)
-
 	//internal shortcuts
         ap = wposmObj.props,
         am = wposmObj.methods;
