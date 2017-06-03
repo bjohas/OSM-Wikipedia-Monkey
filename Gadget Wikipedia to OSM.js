@@ -303,7 +303,7 @@ window.wposm = (function () {
 	am.newInput(ap.doc.options,"search_owl");
 	// 3rd query
 	am.addHTML(ap.doc.options,"<b>THIRD QUERY.</b> Run a 2nd overpass query to look for nearby objects. Enter: <b>false</b>: never; <b>true</b>: run after osm.wikidata.link (if needed); <b>asap</b>: run after 1st overpassquery, not after osm.wikidata.link; <b>always</b>: run even if there are previous results; <b>always-asap</b>: combine both.",1);	
-	am.newInput(ap.doc.options,"search_owl");
+	am.newInput(ap.doc.options,"search3");
 	// Radius
 	am.addHTML(ap.doc.options,"<b>THIRD QUERY.</b> Radius for 3rd query in metres. (If you set this too large, your query may time out, especially in mode 'asap'. Recommended max 5000m.)",1);	
 	am.newInput(ap.doc.options,"search3_radius");
