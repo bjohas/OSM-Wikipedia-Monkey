@@ -167,7 +167,7 @@ window.wposm = (function () {
 		    if (ap.defaults.search3 !== 'false')
 			am.queryThree(obj,arr2);
 		    else
-			console.log("op_2 disabled: "+ap.defaults.search3);
+			console.log("op_2 disabled: ap.defaults.search3="+ap.defaults.search3);
 		}
 	    } else {
 		console.log("op_2 has already run. Won't run a 2nd time.");
@@ -210,7 +210,7 @@ window.wposm = (function () {
 	// Set up main area
         if (am.getb('active')) {
 	    if (ap.attachToSiteNotice) {
-		attachhere.appendChild(attachdiv)
+		attachhere.appendChild(attachdiv);
 	    } else {
 		referenceNode.parentNode.insertBefore(attachdiv, referenceNode.nextSibling);
 		//var hreferenceNode = document.getElementById('firstHeading');
@@ -256,19 +256,19 @@ window.wposm = (function () {
 	    options.setAttribute('style', 'border: solid 1px green; padding: 5px; text-align: left; display: none;');
 	    attachdiv.appendChild(options);
 	    ap.doc.options = options;
-	};
+	}
 	// Set up switch - try to attach to menu
         var attachheremenu = document.getElementById('p-tb');
 	var attachdivmenu;
         if (!attachheremenu) {
             if (!am.getb('active')) {
 		if (ap.attachToSiteNotice) 
-		    attachhere.appendChild(attachdiv)
+		    attachhere.appendChild(attachdiv);
 		else
 		    referenceNode.parentNode.insertBefore(attachdiv, referenceNode.nextSibling);
 		// referenceNode.parentNode.insertBefore(attachdiv, referenceNode.nextSibling);
 		// attachhere.appendChild(attachdiv);
-	    };
+	    }
 	    attachdivmenu = document.createElement("div");
 	    attachdiv.appendChild(attachdivmenu);
             attachinmenu = false;
@@ -339,9 +339,9 @@ window.wposm = (function () {
 	} else {
 	    input.value = ap.defaults[id];
 	    am.put(input.id,ap.defaults[id]);
-	};
+	}
 	input.onfocus = function () { this.style="background-color: yellow;";  };
-	input.onblur = function () { ap.defaults[this.id] = this.value; am.put(this.id,this.value); this.style="background-color: white;"; console.log("assign: "+ap.defaults[this.id]); };
+	input.onblur = function () { ap.defaults[this.id] = this.value; am.put(this.id,this.value); this.style="background-color: white;"; console.log("Option: ap.defaults."+this.id+"="+ap.defaults[this.id]); };
 	attach.appendChild(input);
 	am.addText(attach,"",1);	
 	return 1;
@@ -725,7 +725,7 @@ window.wposm = (function () {
 				} else {
 				    am.addText(attachdiv,"RECOMMENDATION: If this article should be georeferenced, find and add coordinates to the wikidata item.");
 				}
-				if (ap.results_op == 0) {
+				if (ap.results_op === 0) {
 				    document.getElementById("mylinkidOSM").outerHTML = "<s>"+document.getElementById("mylinkidOSM").innerHTML+"</s>";
 				    document.getElementById("mylinkidID").outerHTML = "<s>"+document.getElementById("mylinkidID").innerHTML+"</s>";
 				    if (!ap.has_wikipedia_coords)
@@ -760,12 +760,13 @@ window.wposm = (function () {
 
     //TODO: Indicate a WP-tag match (as for query 1)
     am.queryThree = function (obj,tags) {
+	/*
 	if (ap.defaults.search3 !== 'true') {
 	    console.log("am.queryThree: "+ap.defaults.search3);
 	    return 0;
 	}
-	console.log("query3");
 	// console.log(obj);
+	*/
 	if (!ap.has_wikidata_coords && !ap.has_wikipedia_coords) {
 	    console.log("am.queryThree: "+ap.has_wikidata_coords+" "+ap.has_wikipedia_coords);
 	    return 0;
