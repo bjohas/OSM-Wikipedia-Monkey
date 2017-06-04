@@ -53,7 +53,7 @@ window.wposm = (function () {
 		"WikipediaOSM3005_results_element": "none",
 		"WikipediaOSM3005_map_element": "block",
 		"WikipediaOSM3005_options_element": "none",
-		"WikipediaOSM3005_basics_links": "inline"
+		"WikipediaOSM3005_basics_links_element": "inline"
 	    },
 	    // timeout for JOSM links in ms.
 	    linktimeout: 1000,
@@ -106,7 +106,7 @@ window.wposm = (function () {
 		    "WikipediaOSM3005_results_element": "none",
 		    "WikipediaOSM3005_map_element": "block",
 		    "WikipediaOSM3005_options_element": "none",
-		    "WikipediaOSM3005_basics_links": "none"
+		    "WikipediaOSM3005_basics_links_element": "none"
 		};
 	    switch(name) {
 	    case "config_matching":
@@ -116,7 +116,7 @@ window.wposm = (function () {
 		    "WikipediaOSM3005_results_element": "block",
 		    "WikipediaOSM3005_map_element": "none",
 		    "WikipediaOSM3005_options_element": "none",
-		    "WikipediaOSM3005_basics_links": "inline"
+		    "WikipediaOSM3005_basics_links_element": "inline"
 		};
 		break;
 	    case "config_matching_arch":
@@ -130,7 +130,7 @@ window.wposm = (function () {
 		    "WikipediaOSM3005_results_element": "block",
 		    "WikipediaOSM3005_map_element": "none",
 		    "WikipediaOSM3005_options_element": "none",
-		    "WikipediaOSM3005_basics_links": "inline"
+		    "WikipediaOSM3005_basics_links_element": "inline"
 		};
 		break;
 	    case "config_matching_arch_all_queries":
@@ -144,7 +144,7 @@ window.wposm = (function () {
 		    "WikipediaOSM3005_results_element": "block",
 		    "WikipediaOSM3005_map_element": "none",
 		    "WikipediaOSM3005_options_element": "none",
-		    "WikipediaOSM3005_basics_links": "inline"
+		    "WikipediaOSM3005_basics_links_element": "inline"
 		};
 		break;
 	    case "config_viewing":
@@ -729,7 +729,7 @@ window.wposm = (function () {
 	    attachbuttons.appendChild(am.ahref("WikipediaOSM3005_basics_links","[...]","Show/hide OSM links. Setting is remembered.","javascript:",0)); //,mystyle));
 	    var options_control = document.getElementById("WikipediaOSM3005_basics_links");
 	    options_control.onclick = function() { am.toggle(this.id,"",false,false,1); return false; };
-	    am.toggle("WikipediaOSM3005_basics_links","[",true,false,1);
+	    am.toggle("WikipediaOSM3005_basics_links","",true,false,1);
 	    // OpenStreetMap.org - area
             OSMExtension = "?zoom=18&mlat="+coord[0]+"&mlon="+coord[1];
             link = "http://www.openstreetmap.org/"+OSMExtension;
