@@ -40,13 +40,19 @@ window.wposm = (function () {
 	    defaults: {
 		"mapheight": "400",
 		"mapshow": "", //TODO: needs implementing
-		"search_owl": "always", // values: false: never run; true: run if needed; always: always run
+		"search_op": "true", 
+		"search_owl": "false", // values: false: never run; true: run if needed; always: always run
 		"search3": "false", // Values: false: never; true: run in sequence, if needed; asap: run after 1st overpassquery, not after osm.wikidata.link
 		"search3_radius": "1000",
 		"search3_category": "historic=archaeological_site",
 		"extra_josm_tags": "",
 		"use_secondary_api": "false",
 		"load_and_zoom": "false"
+	    },
+	    visibility: {
+		"WikipediaOSM3005_results_element": "none",
+		"WikipediaOSM3005_map_element": "block",
+		"WikipediaOSM3005_options_element": "none"
 	    },
 	    // timeout for JOSM links in ms.
 	    linktimeout: 1000,
@@ -70,23 +76,95 @@ window.wposm = (function () {
            ) {
             return; //Don't run the script under any of these conditions.
         }
-        	am.initialiseDefault("use_secondary_api");
-	am.initialiseDefault("mapheight");
-	am.initialiseDefault("search_owl");
-	am.initialiseDefault("search3");
-	am.initialiseDefault("search3_radius");
-	am.initialiseDefault("search3_category");
-	am.initialiseDefault("extra_josm_tags");
-	am.initialiseDefault("load_and_zoom");
+        	am.defaultConfig();
         am.configureMenu();
         if (am.getb('active')) {
 	    am.configureOptions();
             ap.addBasicsResult = am.addBasics(); //checks for types visible from article page
-	    am.flowControl("overpass",ap.addBasicsResult);
+	    am.flowControl("init_complete",ap.addBasicsResult);
         } else {
         }
     };
 
+    am.defaultConfig = function(name) {
+	if (name) {
+		ap.defaults = {
+		    "mapheight": "400",
+		    "mapshow": "", 
+		    "search_op": "true", 
+		    "search_owl": "false", 
+		    "search3": "false", 
+		    "search3_radius": "1000",
+		    "search3_category": "",
+		    "extra_josm_tags": "",
+		    "use_secondary_api": "false",
+		    "load_and_zoom": "false"
+		};
+		ap.visibility = {
+		    "WikipediaOSM3005_results_element": "none",
+		    "WikipediaOSM3005_map_element": "block",
+		    "WikipediaOSM3005_options_element": "none"
+		};
+	    switch(name) {
+	    case "config_matching":
+		ap.defaults.search_op = "true";
+		ap.defaults.search_owl = "true";
+		ap.visibility = {
+		    "WikipediaOSM3005_results_element": "block",
+		    "WikipediaOSM3005_map_element": "none",
+		    "WikipediaOSM3005_options_element": "none"
+		};
+		break;
+	    case "config_matching_arch":
+		ap.defaults.search_op = "true";
+		ap.defaults.search_owl = "true";
+		ap.defaults.search3 = "true";
+		ap.defaults.search3_category = "historic=archaeological_site";
+		ap.defaults.extra_josm_tags = "historic=archaeological_site|site_type=megalith";
+		ap.defaults.load_and_zoom =  "true";
+		ap.visibility = {
+		    "WikipediaOSM3005_results_element": "block",
+		    "WikipediaOSM3005_map_element": "none",
+		    "WikipediaOSM3005_options_element": "none"
+		};
+		break;
+	    case "config_matching_arch_all_queries":
+		ap.defaults.search_op = "true";
+		ap.defaults.search_owl = "always";
+		ap.defaults.search3 = "always";
+		ap.defaults.search3_category = "historic=archaeological_site";
+		ap.defaults.extra_josm_tags = "historic=archaeological_site|site_type=megalith";
+		ap.defaults.load_and_zoom =  "true";
+		ap.visibility = {
+		    "WikipediaOSM3005_results_element": "block",
+		    "WikipediaOSM3005_map_element": "none",
+		    "WikipediaOSM3005_options_element": "none"
+		};
+		break;
+	    case "config_viewing":
+		break;
+	    }
+	    Object.keys(ap.defaults).forEach(function(id,index) {
+	    	am.put(id,ap.defaults[id]);
+	    });
+	    Object.keys(ap.visibility).forEach(function(id,index) {
+	    	am.put(id,ap.visibility[id]);
+	    });
+	    location.reload();
+	} else {
+	    am.initialiseDefault("mapheight");
+	    am.initialiseDefault("search_op");
+	    am.initialiseDefault("use_secondary_api");
+	    am.initialiseDefault("search_owl");	
+	    am.initialiseDefault("search3");
+	    am.initialiseDefault("search3_radius");
+	    am.initialiseDefault("search3_category");
+	    am.initialiseDefault("extra_josm_tags");
+	    am.initialiseDefault("load_and_zoom");
+	}
+	return 1;
+    };
+    
     // control is returned here after each async query to execute the next stage (if needed)
     am.flowControl = function(stage,obj) {
 	ap.flowControl++;
@@ -101,12 +179,23 @@ window.wposm = (function () {
 	}
 
 	switch (stage) {
-	case "overpass":	    
-            if (obj) {
+	case "init_complete":
+	    if (ap.defaults.search_op === 'true') {
+		am.flowControl("overpass",obj);
+	    }
+	    break;
+	case "toggle":
+	    if (ap.results_op == -1) {
+		am.flowControl("overpass",ap.addBasicsResult);
+	    }	    
+	    break;
+	case "overpass":
+	    if (obj) {
+		ap.results_op = 0;
 		// obj = ap.addBasicsResult = {"link": link, "OSMExtension": OSMExtension, "coord":coord, "hascoords":hascoords, "wikidata" : wd,"coordissues":coordissues};
                 console.log("getOSMData");
                 am.getOSMData(obj);
-            }
+	    }	   
 	    break;
 	case "overpass_done":
 	    // First query (overpass) returns control here
@@ -219,7 +308,19 @@ window.wposm = (function () {
 	    // Controls
             var basics = document.createElement("div");
 	    basics.id = "WikipediaOSM3005_basics";
-            attachdiv.appendChild(basics);	   
+            attachdiv.appendChild(basics);
+	    var basics_top = document.createElement("span");
+	    basics_top.id = "WikipediaOSM3005_basics_top";
+            basics.appendChild(basics_top);	   
+	    var basics_buttons = document.createElement("span");
+	    basics_buttons.id = "WikipediaOSM3005_basics_buttons";
+            basics.appendChild(basics_buttons);	   
+	    var basics_links = document.createElement("span");
+	    basics_links.id = "WikipediaOSM3005_basics_links";
+	    //if (1==2)
+	    basics.appendChild(basics_links);
+	    //else
+	    //attachdiv.appendChild(basics_links);
 	    // Results
 	    var results = document.createElement("div");
 	    results.id = "WikipediaOSM3005_results_element";
@@ -244,7 +345,11 @@ window.wposm = (function () {
 	    var div = document.createElement("div");
 	    var span = document.createElement("span");
 	    // span.style = "background-color: yellow; text-decoration: italic;";
-	    span.innerHTML = "Map will load automatically if queries return suitable data.";
+	    if (ap.defaults.search_op === 'true') {
+		span.innerHTML = "Map will load automatically if queries return suitable data.";
+	    } else {
+		span.innerHTML = "Please click map button. The map will then load automatically if queries return suitable data.";
+	    }
 	    span.id = "WikipediaOSM3005_map_span";
 	    span.style = "position: absolute;  top: 0;  left: 0; padding: 30px;";
 	    div.appendChild(span);
@@ -286,35 +391,88 @@ window.wposm = (function () {
         input.onclick = function() { console.log(this.checked); am.put('active', this.checked); location.reload();} ;
         attachdivmenu.appendChild(input);
         attachdivmenu.appendChild(am.ahref("WikipediaOSM3005_menu_onoff","OSMgadget","Check/uncheck button to enable/disable. (Reloads page.) Click link for help.","https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget"));
+	// Map button
+	/*
+	var talk = document.getElementById("ca-talk");
+	var tabs = talk.parentNode;
+	var li = document.createElement('li');
+	tabs.appendChild(li);
+	//	am.addHTML(li,"<span><span style=\"padding: 5px; margin-top: 15px;\">Map</span></span>");
+		am.addHTML(li,"Map");
+	*/
     };
 
     am.configureOptions = function() {
-	am.addHTML(ap.doc.options,"<b>Options</b>");
-	am.addText(ap.doc.options,"",1);
-	am.addHTML(ap.doc.options,"<i>These options are expermental. They are saved in the browser, not your wkipedia account. Clicking outside the field saves the value. You'll need to reload the page for them to take effect. Options are strings and not validated - make sure you spell them right.</i><br>");
-	// Extra tagging
-	am.addHTML(ap.doc.options,"<b>Secondary API.</b> Should secondary api be used? Less timeouts, but data not always up to date. If you are mass tagging a lot of objects that have not been recently tagged, use '<b>true</b>'. If you are checking recently tagged objects, used '<b>false</b>'. Enter <b>true</b>/<b>false</b>.",1);	
-	am.newInput(ap.doc.options,"use_secondary_api");
-	// Map height
-	am.addHTML(ap.doc.options,"<b>Height of map</b>",1);	
+	am.addHTML(ap.doc.options,"<b style=\"font-size: 120%;\">Options</b>",1);
+/*	// Display matching tool
+	am.addHTML(ap.doc.options,"<b>User interface.</b> Display matching tools (undernear wikipedia page title)",1);	
+	am.newInput(ap.doc.options,"display_matching_tools","true;false");
+	// Display map button
+	am.addHTML(ap.doc.options,"<b>User interface.</b> Display map button (top left, or tabs)",1);	
+	am.newInput(ap.doc.options,"display_map_button","false;top;tabs");
+	// Always run query to check whether objects exist on wikipedia
+	am.addHTML(ap.doc.options,"<b>User interface.</b> Always run query to check whether objects exist on wikipedia",1);	
+	am.newInput(ap.doc.options,"always_run_map_query","false;true");
+	// Auto display map if a map is available
+	am.addHTML(ap.doc.options,"<b>User interface.</b> Auto display map if a map is available",1);	
+	am.newInput(ap.doc.options,"auto_display_map","never;dynamic;always");	
+*/	// Map height
+	am.addHTML(ap.doc.options,"<b>Height of map.</b> Adjust the height in px.",1);	
 	am.newInput(ap.doc.options,"mapheight");
-	// 3rd query
+	am.addHTML(ap.doc.options,"",1);
+	// Set up defaults
+	am.addHTML(ap.doc.options,"<b>Standard configurations</b><br>You can select the following standard configurations.",1);
+	// viewing
+	am.addHTML(ap.doc.options,"Standard confguration for viewing: ");
+	link = am.ahref("config_viewing","viewing","Click to enable configuration.","javascript:");
+	link.onclick = function() { am.defaultConfig(this.id); };
+	ap.doc.options.appendChild(link);
+	am.addHTML(ap.doc.options,"",1);
+	// matching
+	am.addHTML(ap.doc.options,"Standard confguration for matching (various searches enabled): ");
+	var link = am.ahref("config_matching","matching, ","Click to enable configuration.","javascript:");
+	link.onclick = function() { am.defaultConfig(this.id); };
+	ap.doc.options.appendChild(link);
+	am.addHTML(ap.doc.options,"",1);
+	// arch
+	am.addHTML(ap.doc.options,"Standard confguration for matching megalithic sites (various searches enabled, added default tags): ");
+	var link = am.ahref("config_matching_arch","matching_arch, ","Click to enable configuration.","javascript:");
+	link.onclick = function() { am.defaultConfig(this.id); };
+	ap.doc.options.appendChild(link);
+	am.addHTML(ap.doc.options,"",1);
+	// arch + all queries
+	am.addHTML(ap.doc.options,"Standard confguration for running all queries: ");
+	link = am.ahref("config_matching_arch_all_queries","megalithic sites with all queries","Click to enable configuration.","javascript:");
+	link.onclick = function() { am.defaultConfig(this.id); };
+	ap.doc.options.appendChild(link);
+	am.addHTML(ap.doc.options,"",1);
+	// Advanced options
+	am.addHTML(ap.doc.options,"",1);
+	am.addHTML(ap.doc.options,"<b>Advanced options</b>",1);
+	am.addHTML(ap.doc.options,"<i>These options are expermental. They are saved in the browser, not your wkipedia account. Clicking outside the field saves the value. You'll need to reload the page for them to take effect. Options are strings and not forced to certain values (with only light validation) - make sure you spell them right.</i><br>");
+	// 1st query
+	am.addHTML(ap.doc.options,"<b>FIRST QUERY (overpass).</b> Run an overpass query to look existing matches. Enter: <b>false</b>/<b>true</b>. IF false, the Gagdget will only run on a page if requested by the user.",1);	
+	am.newInput(ap.doc.options,"search_op","true;false");
+	// Extra tagging
+	am.addHTML(ap.doc.options,"Secondary API. Should secondary api be used? Less timeouts, but data not always up to date. If you are mass tagging a lot of objects that have not been recently tagged, use '<b>true</b>'. If you are checking recently tagged objects, used '<b>false</b>'. Enter <b>true</b>/<b>false</b>.",1);	
+	am.newInput(ap.doc.options,"use_secondary_api","true;false");
+	// 2nd query
 	am.addHTML(ap.doc.options,"<b>SECOND QUERY (osm.wikidata.link).</b> Run a osm.wikidata.link query to look for matches. Enter: <b>false</b>: never; <b>true</b>: run after 1st overpass query if needed; <b>always</b>: run always.",1);	
-	am.newInput(ap.doc.options,"search_owl");
+	am.newInput(ap.doc.options,"search_owl","always;true;false");
 	// 3rd query
 	am.addHTML(ap.doc.options,"<b>THIRD QUERY.</b> Run a 2nd overpass query to look for nearby objects. Enter: <b>false</b>: never; <b>true</b>: run after osm.wikidata.link (if needed); <b>asap</b>: run after 1st overpassquery, not after osm.wikidata.link; <b>always</b>: run even if there are previous results; <b>always-asap</b>: combine both.",1);	
-	am.newInput(ap.doc.options,"search3");
+	am.newInput(ap.doc.options,"search3","asap;always;always-asap;true;false");
 	// Radius
-	am.addHTML(ap.doc.options,"<b>THIRD QUERY.</b> Radius for 3rd query in metres. (If you set this too large, your query may time out, especially in mode 'asap'. Recommended max 5000m.)",1);	
+	am.addHTML(ap.doc.options,"Radius for 3rd query in metres. (If you set this too large, your query may time out, especially in mode 'asap'. Recommended max 5000m.)",1);	
 	am.newInput(ap.doc.options,"search3_radius");
 	// Query terms
-	am.addHTML(ap.doc.options,"<b>THIRD QUERY.</b> Extra query terms (for 3rd query), separate with '|'. (If you leave this empty, your query may time out, especially in mode 'asap'.)",1);	
+	am.addHTML(ap.doc.options,"Extra query terms (for 3rd query), separate with '|'. (If you leave this empty, your query may time out, especially in mode 'asap'.)",1);	
 	am.newInput(ap.doc.options,"search3_category");
 	// Extra tagging
 	am.addHTML(ap.doc.options,"<b>JOSM:</b> Tags to add when adding tags with JOSM, separate with '|'",1);	
 	am.newInput(ap.doc.options,"extra_josm_tags");
 	// Use load_and_zoom instead of load_object
-	am.addHTML(ap.doc.options,"<b>JOSM:</b> When adding tags with JOSM, use load_and_zoom instead of load_object (where possible).",1);	
+	am.addHTML(ap.doc.options,"When adding tags with JOSM, use load_and_zoom instead of load_object (where possible).",1);	
 	am.newInput(ap.doc.options,"load_and_zoom");
 	// Gadget on/off
 	am.addText(ap.doc.options,"Use the menu item in left-hand menu to turn gadget on/off.",1);
@@ -329,11 +487,14 @@ window.wposm = (function () {
 	return 1;
     };
 
-    am.newInput = function (attach,id) {
+    am.newInput = function (attach,id,values) {
 	var input = document.createElement("input");
         input.type = "text";
         input.id = id;
 	input.size = 100;
+	var vals = "";
+	if (values)
+	    vals = values;
 	if (am.get(input.id)) {
 	    input.value = am.get(input.id);
 	} else {
@@ -341,14 +502,41 @@ window.wposm = (function () {
 	    am.put(input.id,ap.defaults[id]);
 	}
 	input.onfocus = function () { this.style="background-color: yellow;";  };
-	input.onblur = function () { ap.defaults[this.id] = this.value; am.put(this.id,this.value); this.style="background-color: white;"; console.log("Option: ap.defaults."+this.id+"="+ap.defaults[this.id]); };
+	input.onblur = function () { ap.defaults[this.id] = this.value; am.put(this.id,this.value); this.style=am.checkValues(this.value,vals); console.log("Option: ap.defaults."+this.id+"="+ap.defaults[this.id]); };
+	// am.addHTML(attach,"&rarr;");
 	attach.appendChild(input);
-	am.addText(attach,"",1);	
+	if (vals !== '') 
+	    am.addText(attach," (Permitted values: "+vals+")",1);
+	else
+	    am.addText(attach,"",1);
 	return 1;
+    };
+
+    am.checkValues = function(val,values) {
+	console.log("val="+val+" ["+values+"]");
+	var styletrue = "background-color: white;"
+	var style = "background-color: pink;"
+	if (values)
+	    if (values !== '') {
+		console.log("check val="+val+" ["+values+"]");
+		var arr = values.split(";");
+		if (arr.length > 0)
+		    arr.forEach( function(str) {
+			if (str == val)
+			    style = styletrue;
+		    });
+		else
+		    style = styletrue;
+	    } else {
+		style = styletrue;
+	    }
+	else
+	    style = styletrue;
+	return style;
     };
     
     am.initialiseDefault = function (id) {
-	if (am.get(id) || am.get(id)=== '' ) {
+	if (am.get(id) || am.get(id) === '' ) {
 	    ap.defaults[id] = am.get(id);
 	} else {
 	    am.put(id,ap.defaults[id]);
@@ -358,12 +546,15 @@ window.wposm = (function () {
     
     am.addBasics = function () {
         // Fetch page title
-        var attachdiv = document.getElementById('WikipediaOSM3005_basics');
+        var attachdivprimary = document.getElementById('WikipediaOSM3005_basics_top');
+        var attachdiv = document.getElementById('WikipediaOSM3005_basics_links');
+	var attachbuttons = document.getElementById('WikipediaOSM3005_basics_buttons');
+	// attachbuttons.style = "position: fixed; top: 0px; left: 0px;";
 	if (!ap.attachToSiteNotice) 
-	    attachdiv.appendChild(am.ahref("jumper","Wikipedia","jump to article content","javascript:document.getElementById('mw-content-text').scrollIntoView();",0));
+	    attachdivprimary.appendChild(am.ahref("jumper","Wikipedia","jump to article content","javascript:document.getElementById('mw-content-text').scrollIntoView();",0));
 	else 
-            am.addText(attachdiv,"Wikipedia");
-	am.addText(attachdiv,"-OSM: ");	
+            am.addText(attachdivprimary,"Wikipedia");
+	am.addText(attachdivprimary,"-OSM ");	
         var title = document.getElementById('firstHeading').innerHTML;
         var wp = title;
 	ap.title = title;
@@ -379,7 +570,7 @@ window.wposm = (function () {
             // Fetch wikidata
             wd = document.getElementById('t-wikibase').getElementsByTagName("a")[0].href;
             wd = wd.replace(/.*\//,"");
-            am.addText(attachdiv,""+wd+" ");
+            am.addText(attachdiv," "+wd+" ");
         } catch(err) {
             am.addText(attachdiv,"(No wikidata!) ");
         }
@@ -501,20 +692,24 @@ window.wposm = (function () {
 	    coord = coord_;
 	}
         try {
+	    var run_on_click = true;
+	    if (ap.defaults.search_op === 'true') {
+		run_on_click = false;
+	    }
             // Create links
 	    // The [,] are a workaround for iOS.
-	    am.addText(attachdiv," [",0,"display: none;");
+	    am.addText(attachbuttons," [",0,"display: none;");
 	    var mystyle = "border: 1px solid purple; background-color: lightgrey; margin-left: 3px; padding-left: 3px; padding-right: 3px;";
-            attachdiv.appendChild(am.ahref("WikipediaOSM3005_results"," No results ","Show/hide results (if any). Setting is remembered.","javascript:",0,mystyle));
-	    am.addText(attachdiv,"] [",0,"display: none;");
-	    attachdiv.appendChild(am.ahref("WikipediaOSM3005_map"," No map ","Show/hide map (if available). Setting is remembered.","javascript:",0,mystyle));
-	    am.addText(attachdiv,"] ",0,"display: none;");
+            attachbuttons.appendChild(am.ahref("WikipediaOSM3005_results"," No results ","Show/hide results (if any). Setting is remembered.","javascript:",0,mystyle));
+	    am.addText(attachbuttons,"] [",0,"display: none;");
+	    attachbuttons.appendChild(am.ahref("WikipediaOSM3005_map"," No map ","Show/hide map (if available). Setting is remembered.","javascript:",0,mystyle));
+	    am.addText(attachbuttons,"] ",0,"display: none;");
 	    // "Show/Hide results"
-	    am.toggle("WikipediaOSM3005_results","results",true);
+	    am.toggle("WikipediaOSM3005_results","results",true,run_on_click);
 	    var op_results_control = document.getElementById("WikipediaOSM3005_results");
 	    op_results_control.onclick = function() { am.toggle(this.id,"results"); return false; };
 	    // "Show/Hide map"
-	    am.toggle("WikipediaOSM3005_map","map",true);
+	    am.toggle("WikipediaOSM3005_map","map",true,run_on_click);
 	    var op_map_control = document.getElementById("WikipediaOSM3005_map");
 	    op_map_control.onclick = function() { am.toggle(this.id,"map"); return false; };
 	    // OpenStreetMap.org - area
@@ -541,9 +736,9 @@ window.wposm = (function () {
               // link = "http://localhost:50808/hello?title="+lang+":"+title+"&coord="+coord2+"&geohack="+coord3+"&wikidata="+wd;
               // attachdiv.appendChild(am.ahref("mylinkid"," (local)","You need a local server for this.",link));
 	    // Options control
-	    am.addText(attachdiv," [",0,"display: none;");
-            attachdiv.appendChild(am.ahref("WikipediaOSM3005_options"," show options ","Edit options.","",0,mystyle));
-	    am.addText(attachdiv,"] ",0,"display: none;");
+	    am.addText(attachbuttons," [",0,"display: none;");
+            attachbuttons.appendChild(am.ahref("WikipediaOSM3005_options"," show options ","Edit options.","",0,mystyle));
+	    am.addText(attachbuttons,"] ",0,"display: none;");
 	    var options_control = document.getElementById("WikipediaOSM3005_options");
 	    options_control.onclick = function() { am.toggle(this.id,"options"); return false; };
 	    am.toggle("WikipediaOSM3005_options","options",true);
@@ -1395,30 +1590,47 @@ function(){ opencloseWin(href); return false;}
         return (  (x == "false")  ?  false  :  true  );
     };
 
-    am.toggle = function (id,text,restore) {
+    am.toggle = function (id,text,restore,hollow) {
 	var el = id+"_element";
 	var element = document.getElementById(el);
 	var controller = document.getElementById(id);
 	var state = element.style.display;
+	var symclosed = "&rtrif;";
+	var symopen = "&dtrif;";
+	if (hollow) {
+	    symclosed = "&orarr;";
+	    symopen = "&olarr;";
+	    symclosed = "&rtri;";
+	    symopen = "&dtri;";
+	}
+	if (ap.results_op == -1) {
+	    restore = true;
+	}
 	if (restore==true) {
 	    state = am.get(el);
+	    if (state) {
+	    } else {
+		state = ap.visibility[el];
+	    }
 	    if (state == "block") {
 		element.style.display = "block";
-		controller.innerHTML = "hide "+text;
+		controller.innerHTML = symopen+text;
 	    } else {
 		element.style.display = "none";
-		controller.innerHTML = "show "+text;
+		controller.innerHTML = symclosed+text;
 	    }
 	} else {
 	    if (state == "block") {
 		element.style.display = "none";
-		controller.innerHTML = "show "+text;
+		controller.innerHTML = symclosed+text;
 	    } else {
 		element.style.display = "block";
-		controller.innerHTML = "hide "+text;
+		controller.innerHTML = symopen+text;
 	    }
 	}
 	am.put(el,element.style.display);
+	ap.visibility[el] = element.style.display;
+	am.flowControl("toggle");
 	return false;
     };
     
