@@ -722,8 +722,8 @@ window.wposm = (function () {
 	    am.addText(attachbuttons," ");
 	    attachbuttons.appendChild(am.ahref("WikipediaOSM3005_basics_links","[...]","Show/hide OSM links. Setting is remembered.","javascript:",0)); //,mystyle));
 	    var options_control = document.getElementById("WikipediaOSM3005_basics_links");
-	    options_control.onclick = function() { am.toggle(this.id,"[...]",false,false,1); return false; };
-	    am.toggle("WikipediaOSM3005_basics_links","[...]",true,false,1);
+	    options_control.onclick = function() { am.toggle(this.id,"",false,false,1); return false; };
+	    am.toggle("WikipediaOSM3005_basics_links","",true,false,1);
 	    // OpenStreetMap.org - area
             OSMExtension = "?zoom=18&mlat="+coord[0]+"&mlon="+coord[1];
             link = "http://www.openstreetmap.org/"+OSMExtension;
