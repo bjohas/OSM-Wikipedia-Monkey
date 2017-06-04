@@ -143,6 +143,9 @@ window.wposm = (function () {
 		break;
 	    case "config_viewing":
 		break;
+	    case "config_viewing_on_demand":
+		ap.defaults.search_op = "false";
+		break;
 	    }
 	    Object.keys(ap.defaults).forEach(function(id,index) {
 	    	am.put(id,ap.defaults[id]);
@@ -428,6 +431,12 @@ window.wposm = (function () {
 	link.onclick = function() { am.defaultConfig(this.id); };
 	ap.doc.options.appendChild(link);
 	am.addHTML(ap.doc.options,"",1);
+	// viewing
+	am.addHTML(ap.doc.options,"Standard confguration for viewing (on demand): ");
+	link = am.ahref("config_viewing_on_demand","viewing on demand","Click to enable configuration.","javascript:");
+	link.onclick = function() { am.defaultConfig(this.id); };
+	ap.doc.options.appendChild(link);
+	am.addHTML(ap.doc.options,"",1);	
 	// matching
 	am.addHTML(ap.doc.options,"Standard confguration for matching (various searches enabled): ");
 	var link = am.ahref("config_matching","matching, ","Click to enable configuration.","javascript:");
