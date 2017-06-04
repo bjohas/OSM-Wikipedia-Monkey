@@ -319,7 +319,7 @@ window.wposm = (function () {
 	    basics_buttons.id = "WikipediaOSM3005_basics_buttons";
             basics.appendChild(basics_buttons);	   
 	    var basics_links = document.createElement("span");
-	    basics_links.id = "WikipediaOSM3005_basics_links";
+	    basics_links.id = "WikipediaOSM3005_basics_links_element";
 	    //if (1==2)
 	    basics.appendChild(basics_links);
 	    //else
@@ -546,7 +546,7 @@ window.wposm = (function () {
     am.addBasics = function () {
         // Fetch page title
         var attachdivprimary = document.getElementById('WikipediaOSM3005_basics_top');
-        var attachdiv = document.getElementById('WikipediaOSM3005_basics_links');
+        var attachdiv = document.getElementById('WikipediaOSM3005_basics_links_element');
 	var attachbuttons = document.getElementById('WikipediaOSM3005_basics_buttons');
 	// attachbuttons.style = "position: fixed; top: 0px; left: 0px;";
 	if (!ap.attachToSiteNotice) 
@@ -711,6 +711,19 @@ window.wposm = (function () {
 	    am.toggle("WikipediaOSM3005_map","map",true,run_on_click);
 	    var op_map_control = document.getElementById("WikipediaOSM3005_map");
 	    op_map_control.onclick = function() { am.toggle(this.id,"map"); return false; };
+	    // Options control
+	    am.addText(attachbuttons," [",0,"display: none;");
+            attachbuttons.appendChild(am.ahref("WikipediaOSM3005_options"," show options ","Edit options.","",0,mystyle));
+	    am.addText(attachbuttons,"] ",0,"display: none;");
+	    var options_control = document.getElementById("WikipediaOSM3005_options");
+	    options_control.onclick = function() { am.toggle(this.id,"options"); return false; };
+	    am.toggle("WikipediaOSM3005_options","options",true);
+	    // Show/hide OSM links
+	    am.addText(attachbuttons," ");
+	    attachbuttons.appendChild(am.ahref("WikipediaOSM3005_basics_links","[...]","Show/hide OSM links. Setting is remembered.","javascript:",0)); //,mystyle));
+	    var options_control = document.getElementById("WikipediaOSM3005_basics_links");
+	    options_control.onclick = function() { am.toggle(this.id,"[...]",false,false,1); return false; };
+	    am.toggle("WikipediaOSM3005_basics_links","[...]",true,false,1);
 	    // OpenStreetMap.org - area
             OSMExtension = "?zoom=18&mlat="+coord[0]+"&mlon="+coord[1];
             link = "http://www.openstreetmap.org/"+OSMExtension;
@@ -734,13 +747,6 @@ window.wposm = (function () {
             attachdiv.appendChild(am.ahref("mylinkidJSON"," (overpass-json)","View overpass json data for wikidata:"+wd,link));
               // link = "http://localhost:50808/hello?title="+lang+":"+title+"&coord="+coord2+"&geohack="+coord3+"&wikidata="+wd;
               // attachdiv.appendChild(am.ahref("mylinkid"," (local)","You need a local server for this.",link));
-	    // Options control
-	    am.addText(attachbuttons," [",0,"display: none;");
-            attachbuttons.appendChild(am.ahref("WikipediaOSM3005_options"," show options ","Edit options.","",0,mystyle));
-	    am.addText(attachbuttons,"] ",0,"display: none;");
-	    var options_control = document.getElementById("WikipediaOSM3005_options");
-	    options_control.onclick = function() { am.toggle(this.id,"options"); return false; };
-	    am.toggle("WikipediaOSM3005_options","options",true);
 	    // Help link
             attachdiv.appendChild(am.ahref("reportIssue"," (?)","Report an issue and make suggestions for this Gadget.","https://www.mediawiki.org/wiki/User:Bjohas/OSMgadget"));
 	    //if (!ap.attachToSiteNotice) 
@@ -1589,20 +1595,28 @@ function(){ opencloseWin(href); return false;}
         return (  (x == "false")  ?  false  :  true  );
     };
 
-    am.toggle = function (id,text,restore,hollow) {
+    am.toggle = function (id,text,restore,hollow,style) {
 	var el = id+"_element";
 	var element = document.getElementById(el);
 	var controller = document.getElementById(id);
 	var state = element.style.display;
 	var symclosed = "&rtrif;";
 	var symopen = "&dtrif;";
+	var block = "block";
 	if (hollow) {
 	    symclosed = "&orarr;";
 	    symopen = "&olarr;";
 	    symclosed = "&rtri;";
 	    symopen = "&dtri;";
 	}
-	if (ap.results_op == -1) {
+	if (style) {
+	    if (style==1) {
+		block = "inline";
+		symclosed = "&block;";
+		symopen = "&blk12;";
+	    }
+	}
+	if (ap.results_op == -1 && id === 'WikipediaOSM3005_map' && am.get(el) !== 'none') {
 	    restore = true;
 	}
 	if (restore==true) {
@@ -1611,19 +1625,19 @@ function(){ opencloseWin(href); return false;}
 	    } else {
 		state = ap.visibility[el];
 	    }
-	    if (state == "block") {
-		element.style.display = "block";
+	    if (state == block) {
+		element.style.display = block;
 		controller.innerHTML = symopen+text;
 	    } else {
 		element.style.display = "none";
 		controller.innerHTML = symclosed+text;
 	    }
 	} else {
-	    if (state == "block") {
+	    if (state == block) {
 		element.style.display = "none";
 		controller.innerHTML = symclosed+text;
 	    } else {
-		element.style.display = "block";
+		element.style.display = block;
 		controller.innerHTML = symopen+text;
 	    }
 	}
