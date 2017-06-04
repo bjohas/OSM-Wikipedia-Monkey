@@ -188,7 +188,7 @@ window.wposm = (function () {
 	    }
 	    break;
 	case "toggle":
-	    if (ap.results_op == -1) {
+	    if (ap.results_op == -1 && ap.addBasicsResult) {
 		am.flowControl("overpass",ap.addBasicsResult);
 	    }	    
 	    break;
@@ -351,7 +351,7 @@ window.wposm = (function () {
 	    if (ap.defaults.search_op === 'true') {
 		span.innerHTML = "Map will load automatically if queries return suitable data.";
 	    } else {
-		span.innerHTML = "Please click map button. The map will then load automatically if queries return suitable data.";
+		span.innerHTML = "Please click map button. After a moment, the map will then load automatically if queries return suitable data.";
 	    }
 	    span.id = "WikipediaOSM3005_map_span";
 	    span.style = "position: absolute;  top: 0;  left: 0; padding: 30px;";
@@ -426,35 +426,15 @@ window.wposm = (function () {
 	// Set up defaults
 	am.addHTML(ap.doc.options,"<b>Standard configurations</b><br>You can select the following standard configurations.",1);
 	// viewing
-	am.addHTML(ap.doc.options,"Standard confguration for viewing: ");
-	link = am.ahref("config_viewing","viewing","Click to enable configuration.","javascript:");
-	link.onclick = function() { am.defaultConfig(this.id); };
-	ap.doc.options.appendChild(link);
-	am.addHTML(ap.doc.options,"",1);
+	am.addDefaultConfig("standard confguration for viewing.","config_viewing","viewing","Click to enable configuration.","javascript:");
 	// viewing
-	am.addHTML(ap.doc.options,"Standard confguration for viewing (on demand): ");
-	link = am.ahref("config_viewing_on_demand","viewing on demand","Click to enable configuration.","javascript:");
-	link.onclick = function() { am.defaultConfig(this.id); };
-	ap.doc.options.appendChild(link);
-	am.addHTML(ap.doc.options,"",1);	
+	am.addDefaultConfig("standard confguration for viewing (on demand).","config_viewing_on_demand","viewing on demand","Click to enable configuration.","javascript:");
 	// matching
-	am.addHTML(ap.doc.options,"Standard confguration for matching (various searches enabled): ");
-	var link = am.ahref("config_matching","matching, ","Click to enable configuration.","javascript:");
-	link.onclick = function() { am.defaultConfig(this.id); };
-	ap.doc.options.appendChild(link);
-	am.addHTML(ap.doc.options,"",1);
+	am.addDefaultConfig("standard confguration for matching (various searches enabled).","config_matching","matching","Click to enable configuration.","javascript:");
 	// arch
-	am.addHTML(ap.doc.options,"Standard confguration for matching megalithic sites (various searches enabled, added default tags): ");
-	var link = am.ahref("config_matching_arch","matching_arch, ","Click to enable configuration.","javascript:");
-	link.onclick = function() { am.defaultConfig(this.id); };
-	ap.doc.options.appendChild(link);
-	am.addHTML(ap.doc.options,"",1);
+	am.addDefaultConfig("standard confguration for matching megalithic sites (various searches enabled, added default tags).","config_matching_arch","megalithic sites with queries as needed","Click to enable configuration.","javascript:");
 	// arch + all queries
-	am.addHTML(ap.doc.options,"Standard confguration for running all queries: ");
-	link = am.ahref("config_matching_arch_all_queries","megalithic sites with all queries","Click to enable configuration.","javascript:");
-	link.onclick = function() { am.defaultConfig(this.id); };
-	ap.doc.options.appendChild(link);
-	am.addHTML(ap.doc.options,"",1);
+	am.addDefaultConfig("same as previous, but with always running all queries.","config_matching_arch_all_queries","megalithic sites with all queries","Click to enable configuration.","javascript:");
 	// Advanced options
 	am.addHTML(ap.doc.options,"",1);
 	am.addHTML(ap.doc.options,"<b>Advanced options</b>",1);
@@ -496,6 +476,16 @@ window.wposm = (function () {
 	return 1;
     };
 
+    am.addDefaultConfig = function(text,id,linktext,linkhover,js) {
+	am.addHTML(ap.doc.options,"- ");
+	var link = am.ahref(id,linktext,linkhover,js);
+	link.onclick = function() { am.defaultConfig(this.id); };
+	ap.doc.options.appendChild(link);
+	am.addHTML(ap.doc.options,": ");
+	am.addHTML(ap.doc.options,text);
+	am.addHTML(ap.doc.options,"",1);
+    };
+    
     am.newInput = function (attach,id,values) {
 	var input = document.createElement("input");
         input.type = "text";
