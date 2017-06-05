@@ -119,6 +119,16 @@ window.wposm = (function () {
 		    "WikipediaOSM3005_basics_links_element": "inline"
 		};
 		break;
+	    case "config_matching_on_demand":
+		ap.defaults.search_op = "false";
+		ap.defaults.search_owl = "true";
+		ap.visibility = {
+		    "WikipediaOSM3005_results_element": "none",
+		    "WikipediaOSM3005_map_element": "none",
+		    "WikipediaOSM3005_options_element": "none",
+		    "WikipediaOSM3005_basics_links_element": "inline"
+		};
+		break;
 	    case "config_matching_arch":
 		ap.defaults.search_op = "true";
 		ap.defaults.search_owl = "true";
@@ -151,7 +161,14 @@ window.wposm = (function () {
 		break;
 	    case "config_viewing_on_demand":
 		ap.defaults.search_op = "false";
-		ap.visibility.WikipediaOSM3005_map_element = "none";
+		ap.visibility = {
+		    "WikipediaOSM3005_results_element": "none",
+		    "WikipediaOSM3005_map_element": "none",
+		    "WikipediaOSM3005_options_element": "none",
+		    "WikipediaOSM3005_basics_links_element": "none"
+		};
+		//ap.visibility.WikipediaOSM3005_results_element = "none";
+		//ap.visibility.WikipediaOSM3005_map_element = "none";
 		break;
 	    }
 	    Object.keys(ap.defaults).forEach(function(id,index) {
@@ -432,9 +449,11 @@ window.wposm = (function () {
 	// viewing
 	am.addDefaultConfig("standard confguration for viewing. In this configuration, the first overpass query always runs to determine whether an object exists. If no object exists, the 'map' label changes to 'no map'. Otherwise, an object exists. If an object exists: If the the map tab is open, the map loads automatically. If the map tab is closed, click it to show the map. By default, the map tab is open in this configuration. However, you can close it if you prefer.","config_viewing","viewing","Click to enable configuration.","javascript:");
 	// viewing
-	am.addDefaultConfig("standard confguration for viewing (on demand). In this configuration, no queries are made until you click on one of the menu items (e.g. 'map'). By default, the map tab is close in this configuration; you can open it if you prefer, and it will stay open. Howeve,r you'll still need to click on the menu to load data.","config_viewing_on_demand","viewing on demand","Click to enable configuration.","javascript:");
+	am.addDefaultConfig("standard confguration for viewing (on demand; i.e. doesn't run automatically). In this configuration, no queries are made until you click on one of the menu items (e.g. 'map'). By default, the map tab is close in this configuration; you can open it if you prefer, and it will stay open. Howeve,r you'll still need to click on the menu to load data.","config_viewing_on_demand","viewing on demand","Click to enable configuration.","javascript:");
 	// matching
 	am.addDefaultConfig("standard confguration for matching (various searches enabled).","config_matching","matching","Click to enable configuration.","javascript:");
+	// matching
+	am.addDefaultConfig("same as previous, but on demand (i.e. doesn't run automatically).","config_matching_on_demand","matching on demand","Click to enable configuration.","javascript:");
 	// arch
 	am.addDefaultConfig("standard confguration for matching megalithic sites (various searches enabled, added default tags).","config_matching_arch","megalithic sites with queries as needed","Click to enable configuration.","javascript:");
 	// arch + all queries
@@ -1634,8 +1653,17 @@ function(){ opencloseWin(href); return false;}
 
 	    }
 	}
-	if (ap.results_op == -1 && id === 'WikipediaOSM3005_map' && am.get(el) !== 'none') {
+	if (ap.results_op == -1 && (id === 'WikipediaOSM3005_map' || id === 'WikipediaOSM3005_results') && am.get(el) !== 'none') {
 	    restore = true;
+	    if (id === 'WikipediaOSM3005_map') {
+		var controller2 = document.getElementById('WikipediaOSM3005_results');
+		var state2 = am.get('WikipediaOSM3005_results');
+		if (state2 == block) {
+		    controller2.innerHTML = symopen+"results";
+		} else {
+		    controller2.innerHTML = symclosed+"results";
+		}
+	    }
 	}
 	if (restore==true) {
 	    state = am.get(el);
