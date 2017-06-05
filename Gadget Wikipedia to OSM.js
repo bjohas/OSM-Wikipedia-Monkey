@@ -53,7 +53,7 @@ window.wposm = (function () {
 		"WikipediaOSM3005_results_element": "none",
 		"WikipediaOSM3005_map_element": "block",
 		"WikipediaOSM3005_options_element": "none",
-		"WikipediaOSM3005_basics_links_element": "inline"
+		"WikipediaOSM3005_basics_links_element": "none"
 	    },
 	    // timeout for JOSM links in ms.
 	    linktimeout: 1000,
@@ -1625,9 +1625,12 @@ function(){ opencloseWin(href); return false;}
 		//symclosed = "&loang;...&roang;"
 		//symclosed = "&lobrk;...&robrk;"
 		//symclosed = "&lobrk;&rArr;&robrk;"
-		symclosed = "&lobrk;&hellip;&robrk;"
-		symopen = "|&lArr;"; // "&lobrk;&lArr;"; // "|&lArr;" //"&larrfs;"
+		// symclosed = "&lobrk;&hellip;&robrk;"
+		// symopen = "|&lArr;"; // "&lobrk;&lArr;"; // "|&lArr;" //"&larrfs;"
 		//&elinters;
+		symclosed = "&block;";
+		symopen = "&blk14;&ltrif;";
+
 	    }
 	}
 	if (ap.results_op == -1 && id === 'WikipediaOSM3005_map' && am.get(el) !== 'none') {
