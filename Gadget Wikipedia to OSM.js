@@ -425,26 +425,27 @@ window.wposm = (function () {
 	// Auto display map if a map is available
 	am.addHTML(ap.doc.options,"<b>User interface.</b> Auto display map if a map is available",1);	
 	am.newInput(ap.doc.options,"auto_display_map","never;dynamic;always");	
-*/	// Map height
-	am.addHTML(ap.doc.options,"<b>Height of map.</b> Adjust the height in px.",1);	
-	am.newInput(ap.doc.options,"mapheight");
-	am.addHTML(ap.doc.options,"",1);
+*/
 	// Set up defaults
 	am.addHTML(ap.doc.options,"<b>Standard configurations</b><br>You can select the following standard configurations.",1);
 	// viewing
-	am.addDefaultConfig("standard confguration for viewing.","config_viewing","viewing","Click to enable configuration.","javascript:");
+	am.addDefaultConfig("standard confguration for viewing. In this configuration, the first overpass query always runs to determine whether an object exists. If no object exists, the 'map' label changes to 'no map'. Otherwise, an object exists. If an object exists: If the map tab is closed, click it to show the map. If the the map tab is open, the map loads automatically.","config_viewing","viewing","Click to enable configuration.","javascript:");
 	// viewing
-	am.addDefaultConfig("standard confguration for viewing (on demand).","config_viewing_on_demand","viewing on demand","Click to enable configuration.","javascript:");
+	am.addDefaultConfig("standard confguration for viewing (on demand). In this configuration, no queries are made until you click on one of the menu items (e.g. 'map').","config_viewing_on_demand","viewing on demand","Click to enable configuration.","javascript:");
 	// matching
 	am.addDefaultConfig("standard confguration for matching (various searches enabled).","config_matching","matching","Click to enable configuration.","javascript:");
 	// arch
 	am.addDefaultConfig("standard confguration for matching megalithic sites (various searches enabled, added default tags).","config_matching_arch","megalithic sites with queries as needed","Click to enable configuration.","javascript:");
 	// arch + all queries
 	am.addDefaultConfig("same as previous, but with always running all queries.","config_matching_arch_all_queries","megalithic sites with all queries","Click to enable configuration.","javascript:");
-	// Advanced options
 	am.addHTML(ap.doc.options,"",1);
+	// Map height
+	am.addHTML(ap.doc.options,"<b>Height of map.</b> Adjust the height in px.",1);	
+	am.newInput(ap.doc.options,"mapheight");
+	am.addHTML(ap.doc.options,"",1);
+	// Advanced options	
 	am.addHTML(ap.doc.options,"<b>Advanced options</b>",1);
-	am.addHTML(ap.doc.options,"<i>These options are expermental. They are saved in the browser, not your wkipedia account. Clicking outside the field saves the value. You'll need to reload the page for them to take effect. Options are strings and not forced to certain values (with only light validation) - make sure you spell them right.</i><br>");
+	am.addHTML(ap.doc.options,"<i>These options are expermental. They are automatically adjusted to sensible combinations by using 'standard configurations' above. However, they can be adjusted individually. Note that these options are saved in the browser, not your wkipedia account. Clicking outside the field saves the value. You'll need to reload the page for them to take effect. Options are strings and not forced to certain values (with only light validation) - make sure you spell them right.</i><br>");
 	// 1st query
 	am.addHTML(ap.doc.options,"<b>FIRST QUERY (overpass).</b> Run an overpass query to look existing matches. Enter: <b>false</b>/<b>true</b>. IF false, the Gagdget will only run on a page if requested by the user.",1);	
 	am.newInput(ap.doc.options,"search_op","true;false");
@@ -1618,8 +1619,15 @@ function(){ opencloseWin(href); return false;}
 	if (style) {
 	    if (style==1) {
 		block = "inline";
-		symclosed = "&block;";
-		symopen = "&blk12;";
+		//symclosed = "&block;";
+		//symopen = "&blk12;";
+		//symclosed = "&loang;&block;&roang;"
+		//symclosed = "&loang;...&roang;"
+		//symclosed = "&lobrk;...&robrk;"
+		//symclosed = "&lobrk;&rArr;&robrk;"
+		symclosed = "&lobrk;&hellip;&robrk;"
+		symopen = "|&lArr;"; // "&lobrk;&lArr;"; // "|&lArr;" //"&larrfs;"
+		//&elinters;
 	    }
 	}
 	if (ap.results_op == -1 && id === 'WikipediaOSM3005_map' && am.get(el) !== 'none') {
