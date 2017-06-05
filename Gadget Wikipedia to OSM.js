@@ -430,9 +430,9 @@ window.wposm = (function () {
 	// Set up defaults
 	am.addHTML(ap.doc.options,"<b>Standard configurations</b><br>You can select the following standard configurations.",1);
 	// viewing
-	am.addDefaultConfig("standard confguration for viewing. In this configuration, the first overpass query always runs to determine whether an object exists. If no object exists, the 'map' label changes to 'no map'. Otherwise, an object exists. If an object exists: If the map tab is closed, click it to show the map. If the the map tab is open, the map loads automatically.","config_viewing","viewing","Click to enable configuration.","javascript:");
+	am.addDefaultConfig("standard confguration for viewing. In this configuration, the first overpass query always runs to determine whether an object exists. If no object exists, the 'map' label changes to 'no map'. Otherwise, an object exists. If an object exists: If the the map tab is open, the map loads automatically. If the map tab is closed, click it to show the map. By default, the map tab is open in this configuration. However, you can close it if you prefer.","config_viewing","viewing","Click to enable configuration.","javascript:");
 	// viewing
-	am.addDefaultConfig("standard confguration for viewing (on demand). In this configuration, no queries are made until you click on one of the menu items (e.g. 'map').","config_viewing_on_demand","viewing on demand","Click to enable configuration.","javascript:");
+	am.addDefaultConfig("standard confguration for viewing (on demand). In this configuration, no queries are made until you click on one of the menu items (e.g. 'map'). By default, the map tab is close in this configuration; you can open it if you prefer, and it will stay open. Howeve,r you'll still need to click on the menu to load data.","config_viewing_on_demand","viewing on demand","Click to enable configuration.","javascript:");
 	// matching
 	am.addDefaultConfig("standard confguration for matching (various searches enabled).","config_matching","matching","Click to enable configuration.","javascript:");
 	// arch
