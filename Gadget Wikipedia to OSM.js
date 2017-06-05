@@ -151,6 +151,7 @@ window.wposm = (function () {
 		break;
 	    case "config_viewing_on_demand":
 		ap.defaults.search_op = "false";
+		ap.visibility.WikipediaOSM3005_map_element = "none";
 		break;
 	    }
 	    Object.keys(ap.defaults).forEach(function(id,index) {
